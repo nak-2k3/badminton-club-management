@@ -4,11 +4,13 @@ import com.badmintonclub.clubmanagement.entity.User;
 import com.badmintonclub.clubmanagement.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.util.List;
 
 @Service
 public class UserService {
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
 
     @Autowired
     private UserRepository userRepository;
@@ -20,6 +22,10 @@ public class UserService {
 
     // Lưu user
     public User saveUser(User user) {
+        if (!user.getPassword().startsWith("$2a$")) {
+            user.setPassword(
+                    passwordEncoder.encode(user.getPassword()));
+        }
         return userRepository.save(user);
     }
 
