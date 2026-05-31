@@ -44,6 +44,10 @@ public class SecurityConfig {
                                                                 "/images/**")
                                                 .permitAll()
 
+                                                // Profile: mọi tài khoản đã đăng nhập đều xem được
+                                                .requestMatchers("/profile")
+                                                .hasAnyRole("ADMIN", "MEMBER", "TREASURER")
+
                                                 // User management chỉ Admin
                                                 .requestMatchers("/users/**")
                                                 .hasRole("ADMIN")

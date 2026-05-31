@@ -21,6 +21,10 @@ public class ScheduleService {
         return scheduleRepository.save(schedule);
     }
 
+    public long countSchedules() {
+        return scheduleRepository.count();
+    }
+
     public Schedule getScheduleById(Long id) {
         return scheduleRepository.findById(id).orElse(null);
     }
@@ -54,5 +58,10 @@ public class ScheduleService {
             schedule.setStatus(ScheduleStatus.OPEN);
             scheduleRepository.save(schedule);
         }
+    }
+
+    // tìm 5 lịch đánh gần nhất
+    public List<Schedule> getLatestSchedules() {
+        return scheduleRepository.findTop5ByOrderByPlayTimeDesc();
     }
 }

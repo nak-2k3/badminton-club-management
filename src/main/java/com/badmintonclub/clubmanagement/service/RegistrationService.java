@@ -92,4 +92,8 @@ public class RegistrationService {
     public boolean isRegistered(User user, Schedule schedule) {
         return registrationRepository.existsByUserAndSchedule(user, schedule);
     }
+
+    public long countRegistrations() {
+        return registrationRepository.count();
+    }
 }

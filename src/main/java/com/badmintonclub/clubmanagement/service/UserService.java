@@ -20,6 +20,18 @@ public class UserService {
         return userRepository.findAll();
     }
 
+    public long countUsers() {
+        return userRepository.count();
+    }
+
+    public long countActiveUsers() {
+        return userRepository.countByEnabledTrue();
+    }
+
+    public long countLockedUsers() {
+        return userRepository.countByEnabledFalse();
+    }
+
     // Lưu user
     public User saveUser(User user, String newPassword) {
 
