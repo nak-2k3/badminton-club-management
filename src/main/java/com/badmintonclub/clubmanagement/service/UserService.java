@@ -76,4 +76,47 @@ public class UserService {
     public User findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
+
+    public void updateProfile(Long id, User formUser) {
+        User user = getUserById(id);
+
+        if (user != null) {
+            user.setFullName(formUser.getFullName());
+            user.setPhone(formUser.getPhone());
+            user.setGender(formUser.getGender());
+            user.setBirthDate(formUser.getBirthDate());
+            user.setAddress(formUser.getAddress());
+
+            userRepository.save(user);
+        }
+    }
+
+    public boolean changePassword(
+            Long userId,
+            String currentPassword,
+            String newPassword,
+            String confirmPassword) {
+        User user = getUserById(userId);
+
+        if (user == null) {
+            return false;
+        }
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            return false;
+        }
+
+        if (newPassword == null || newPassword.length() < 6) {
+            return false;
+        }
+
+        if (!newPassword.equals(confirmPassword)) {
+            return false;
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        return true;
+    }
 }

@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
@@ -48,6 +49,7 @@ public class User {
 
     // Ngày sinh
     @DateTimeFormat(pattern = "dd/MM/yyyy")
+    @Past(message = "Ngày sinh phải là ngày trong quá khứ")
     private LocalDate birthDate;
 
     // Địa chỉ

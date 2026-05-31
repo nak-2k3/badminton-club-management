@@ -45,7 +45,11 @@ public class SecurityConfig {
                                                 .permitAll()
 
                                                 // Profile: mọi tài khoản đã đăng nhập đều xem được
-                                                .requestMatchers("/profile")
+                                                .requestMatchers(
+                                                                "/profile",
+                                                                "/profile/edit",
+                                                                "/profile/update",
+                                                                "/profile/change-password")
                                                 .hasAnyRole("ADMIN", "MEMBER", "TREASURER")
 
                                                 // User management chỉ Admin
