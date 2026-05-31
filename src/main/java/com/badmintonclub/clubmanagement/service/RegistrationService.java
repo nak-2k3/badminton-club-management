@@ -1,6 +1,7 @@
 package com.badmintonclub.clubmanagement.service;
 
 import com.badmintonclub.clubmanagement.entity.*;
+import com.badmintonclub.clubmanagement.entity.enums.ScheduleStatus;
 import com.badmintonclub.clubmanagement.repository.RegistrationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,15 @@ public class RegistrationService {
             Schedule schedule) {
 
         // khóa lịch
-        if (schedule.getLocked()) {
+        if (user == null || schedule == null) {
+            return false;
+        }
+
+        if (!user.isEnabled()) {
+            return false;
+        }
+
+        if (schedule.getStatus() != ScheduleStatus.OPEN) {
             return false;
         }
 
@@ -61,5 +70,26 @@ public class RegistrationService {
 
         return registrationRepository
                 .findBySchedule(schedule);
+    }
+
+    public boolean cancelRegistration(User user, Schedule schedule) {
+
+        if (user == null || schedule == null) {
+            return false;
+        }
+
+        Registration registration = registrationRepository.findByUserAndSchedule(user, schedule);
+
+        if (registration == null) {
+            return false;
+        }
+
+        registrationRepository.delete(registration);
+
+        return true;
+    }
+
+    public boolean isRegistered(User user, Schedule schedule) {
+        return registrationRepository.existsByUserAndSchedule(user, schedule);
     }
 }

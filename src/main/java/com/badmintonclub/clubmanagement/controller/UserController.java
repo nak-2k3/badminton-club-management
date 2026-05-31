@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import jakarta.validation.Valid;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class UserController {
@@ -20,8 +21,11 @@ public class UserController {
 
     @GetMapping("/users")
     public String listUsers(Model model) {
-        // truyền data sang html
-        model.addAttribute("users", userService.getAllUsers());
+
+        var users = userService.getAllUsers();
+
+        model.addAttribute("users", users);
+        model.addAttribute("totalUsers", users.size());
 
         return "users/list";
     }
@@ -38,17 +42,18 @@ public class UserController {
     // lưu dữ liệu
     @PostMapping("/users/save")
     public String saveUser(
-            // kích hoạt vadition
             @Valid @ModelAttribute("user") User user,
-            // chứa lỗi
-            BindingResult result) {
-        if (result.hasErrors()) { // kiểm tra lỗi
+            BindingResult result,
+            @RequestParam(value = "newPassword", required = false) String newPassword) {
+        if (result.hasErrors()) {
             if (user.getId() != null) {
                 return "users/edit";
             }
             return "users/create";
         }
-        userService.saveUser(user);
+
+        userService.saveUser(user, newPassword);
+
         return "redirect:/users";
     }
 
@@ -62,11 +67,15 @@ public class UserController {
         return "users/edit";
     }
 
-    @GetMapping("/users/delete/{id}")
-    public String deleteUser(@PathVariable Long id) {
+    @GetMapping("/users/lock/{id}")
+    public String lockUser(@PathVariable Long id) {
+        userService.lockUser(id);
+        return "redirect:/users";
+    }
 
-        userService.deleteUser(id);
-
+    @GetMapping("/users/unlock/{id}")
+    public String unlockUser(@PathVariable Long id) {
+        userService.unlockUser(id);
         return "redirect:/users";
     }
 }

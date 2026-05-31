@@ -10,88 +10,159 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import com.badmintonclub.clubmanagement.entity.User;
 import com.badmintonclub.clubmanagement.service.RegistrationService;
-
+import jakarta.validation.Valid;
+import org.springframework.validation.BindingResult;
 import java.security.Principal;
 
 @Controller
 public class ScheduleController {
 
-    @Autowired
-    private ScheduleService scheduleService;
+        @Autowired
+        private ScheduleService scheduleService;
 
-    @Autowired
-    private RegistrationService registrationService;
+        @Autowired
+        private RegistrationService registrationService;
 
-    @Autowired
-    private UserService userService;
+        @Autowired
+        private UserService userService;
 
-    @GetMapping("/schedules")
-    public String listSchedules(Model model) {
-        var schedules = scheduleService.getAllSchedules();
-        for (Schedule schedule : schedules) {
-            int currentPlayers = registrationService
-                    .countParticipants(schedule);
+        @GetMapping("/schedules")
+        public String listSchedules(Model model, Principal principal) {
+                var schedules = scheduleService.getAllSchedules();
 
-            schedule.setCurrentPlayers(
-                    currentPlayers);
+                User currentUser = null;
+
+                if (principal != null) {
+                        currentUser = userService.findByEmail(principal.getName());
+                }
+
+                for (Schedule schedule : schedules) {
+                        int currentPlayers = registrationService.countParticipants(schedule);
+                        schedule.setCurrentPlayers(currentPlayers);
+
+                        if (currentUser != null) {
+                                boolean registered = registrationService.isRegistered(currentUser, schedule);
+                                schedule.setRegistered(registered);
+                        }
+                }
+
+                model.addAttribute("schedules", schedules);
+
+                return "schedules/list";
         }
-        model.addAttribute(
-                "schedules",
-                schedules);
-        return "schedules/list";
-    }
 
-    @GetMapping("/schedules/create")
-    public String showCreateForm(Model model) {
+        @GetMapping("/schedules/create")
+        public String showCreateForm(Model model) {
 
-        model.addAttribute("schedule", new Schedule());
+                model.addAttribute("schedule", new Schedule());
 
-        return "schedules/create";
-    }
+                return "schedules/create";
+        }
 
-    @PostMapping("/schedules/save")
-    public String saveSchedule(
-            @ModelAttribute Schedule schedule) {
+        @PostMapping("/schedules/save")
+        public String saveSchedule(
+                        @Valid @ModelAttribute("schedule") Schedule schedule,
+                        BindingResult result) {
 
-        scheduleService.saveSchedule(schedule);
+                if (result.hasErrors()) {
+                        if (schedule.getId() != null) {
+                                return "schedules/edit";
+                        }
 
-        return "redirect:/schedules";
-    }
+                        return "schedules/create";
+                }
 
-    @GetMapping("/schedules/register/{id}")
-    public String registerSchedule(
-            @PathVariable Long id,
-            Principal principal) {
+                scheduleService.saveSchedule(schedule);
 
-        Schedule schedule = scheduleService.getScheduleById(id);
+                return "redirect:/schedules";
+        }
 
-        User user = userService.findByEmail(
-                principal.getName());
+        @GetMapping("/schedules/register/{id}")
+        public String registerSchedule(
+                        @PathVariable Long id,
+                        Principal principal) {
 
-        registrationService.register(user, schedule);
+                Schedule schedule = scheduleService.getScheduleById(id);
 
-        return "redirect:/schedules";
-    }
+                User user = userService.findByEmail(
+                                principal.getName());
 
-    @GetMapping("/schedules/participants/{id}")
-    public String participants(
-            @PathVariable Long id,
-            Model model) {
+                registrationService.register(user, schedule);
 
-        Schedule schedule = scheduleService.getScheduleById(id);
+                return "redirect:/schedules";
+        }
 
-        var registrations = registrationService
-                .getRegistrationsBySchedule(
-                        schedule);
+        @GetMapping("/schedules/participants/{id}")
+        public String participants(
+                        @PathVariable Long id,
+                        Model model) {
 
-        model.addAttribute(
-                "schedule",
-                schedule);
+                Schedule schedule = scheduleService.getScheduleById(id);
 
-        model.addAttribute(
-                "registrations",
-                registrations);
+                var registrations = registrationService
+                                .getRegistrationsBySchedule(
+                                                schedule);
 
-        return "schedules/participants";
-    }
+                model.addAttribute(
+                                "schedule",
+                                schedule);
+
+                model.addAttribute(
+                                "registrations",
+                                registrations);
+
+                return "schedules/participants";
+        }
+
+        @GetMapping("/schedules/edit/{id}")
+        public String showEditForm(@PathVariable Long id, Model model) {
+
+                Schedule schedule = scheduleService.getScheduleById(id);
+
+                if (schedule == null) {
+                        return "redirect:/schedules";
+                }
+
+                model.addAttribute("schedule", schedule);
+
+                return "schedules/edit";
+        }
+
+        @GetMapping("/schedules/cancel/{id}")
+        public String cancelSchedule(@PathVariable Long id) {
+
+                scheduleService.cancelSchedule(id);
+
+                return "redirect:/schedules";
+        }
+
+        @GetMapping("/schedules/lock/{id}")
+        public String lockSchedule(@PathVariable Long id) {
+
+                scheduleService.lockSchedule(id);
+
+                return "redirect:/schedules";
+        }
+
+        @GetMapping("/schedules/open/{id}")
+        public String openSchedule(@PathVariable Long id) {
+
+                scheduleService.openSchedule(id);
+
+                return "redirect:/schedules";
+        }
+
+        // hủy tham gia
+        @GetMapping("/schedules/cancel-registration/{id}")
+        public String cancelRegistration(
+                        @PathVariable Long id,
+                        Principal principal) {
+                Schedule schedule = scheduleService.getScheduleById(id);
+                User user = userService.findByEmail(principal.getName());
+
+                registrationService.cancelRegistration(user, schedule);
+
+                return "redirect:/schedules";
+        }
+
 }

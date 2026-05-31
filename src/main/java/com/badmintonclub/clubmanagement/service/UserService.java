@@ -21,11 +21,22 @@ public class UserService {
     }
 
     // Lưu user
-    public User saveUser(User user) {
-        if (!user.getPassword().startsWith("$2a$")) {
-            user.setPassword(
-                    passwordEncoder.encode(user.getPassword()));
+    public User saveUser(User user, String newPassword) {
+
+        if (user.getId() != null) {
+            User oldUser = getUserById(user.getId());
+
+            if (oldUser != null) {
+                if (newPassword != null && !newPassword.isBlank()) {
+                    user.setPassword(passwordEncoder.encode(newPassword));
+                } else {
+                    user.setPassword(oldUser.getPassword());
+                }
+            }
+        } else {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
+
         return userRepository.save(user);
     }
 
@@ -34,9 +45,20 @@ public class UserService {
         return userRepository.findById(id).orElse(null);
     }
 
-    // Xóa user
-    public void deleteUser(Long id) {
-        userRepository.deleteById(id);
+    public void lockUser(Long id) {
+        User user = getUserById(id);
+        if (user != null) {
+            user.setEnabled(false);
+            userRepository.save(user);
+        }
+    }
+
+    public void unlockUser(Long id) {
+        User user = getUserById(id);
+        if (user != null) {
+            user.setEnabled(true);
+            userRepository.save(user);
+        }
     }
 
     public User findByEmail(String email) {

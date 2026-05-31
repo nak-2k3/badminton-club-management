@@ -1,9 +1,13 @@
 package com.badmintonclub.clubmanagement.entity;
 
+import com.badmintonclub.clubmanagement.entity.enums.ScheduleStatus;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-
+import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDateTime;
 
 @Entity
@@ -14,19 +18,28 @@ public class Schedule {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-
     private Long id;
 
-    private String title; // tên buổi đánh
+    @NotBlank(message = "Tiêu đề không được để trống")
+    private String title;
 
-    private String courtName; // tên sân
+    @NotBlank(message = "Tên sân không được để trống")
+    private String courtName;
 
-    private LocalDateTime playTime; // thời gian
+    @NotNull(message = "Thời gian không được để trống")
+    @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
+    private LocalDateTime playTime;
 
-    private Integer maxPlayers; // giới hạn người
+    @NotNull(message = "Giới hạn người không được để trống")
+    @Min(value = 1, message = "Giới hạn người phải lớn hơn 0")
+    private Integer maxPlayers;
 
-    private Boolean locked = false; // khóa đk
+    @Enumerated(EnumType.STRING)
+    private ScheduleStatus status = ScheduleStatus.OPEN;
 
-    @Transient // ko lưu trong dt chỉ hiển thị
+    @Transient
     private int currentPlayers;
+    // biến tạm đăng ký tham gia
+    @Transient
+    private boolean registered;
 }

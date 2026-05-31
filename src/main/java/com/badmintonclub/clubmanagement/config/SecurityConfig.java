@@ -12,59 +12,78 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class SecurityConfig {
 
-    @Autowired
-    private CustomUserDetailsService customUserDetailsService;
+        @Autowired
+        private CustomUserDetailsService customUserDetailsService;
 
-    @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        @Bean
+        public BCryptPasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 
-    @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config) throws Exception {
+        @Bean
+        public AuthenticationManager authenticationManager(
+                        AuthenticationConfiguration config) throws Exception {
+                return config.getAuthenticationManager();
+        }
 
-        return config.getAuthenticationManager();
-    }
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http)
+                        throws Exception {
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
-            throws Exception {
+                http
+                                .csrf(csrf -> csrf.disable())
 
-        http
-                .csrf(csrf -> csrf.disable())
+                                .authorizeHttpRequests(auth -> auth
 
-                .authorizeHttpRequests(auth -> auth
+                                                // Public
+                                                .requestMatchers(
+                                                                "/",
+                                                                "/login",
+                                                                "/css/**",
+                                                                "/js/**",
+                                                                "/images/**")
+                                                .permitAll()
 
-                        .requestMatchers(
-                                "/",
-                                "/css/**",
-                                "/js/**")
-                        .permitAll()
+                                                // User management chỉ Admin
+                                                .requestMatchers("/users/**")
+                                                .hasRole("ADMIN")
 
-                        .requestMatchers("/users/**")
-                        .hasRole("ADMIN")
-                        // .requestMatchers(
-                        // "/users/create",
-                        // "/users/save")
-                        // .permitAll()
+                                                // Schedule management chỉ Admin
+                                                .requestMatchers(
+                                                                "/schedules/create",
+                                                                "/schedules/save",
+                                                                "/schedules/edit/**",
+                                                                "/schedules/lock/**",
+                                                                "/schedules/open/**",
+                                                                "/schedules/cancel/**")
+                                                .hasRole("ADMIN")
 
-                        // .requestMatchers("/users/**")
-                        // .hasRole("ADMIN")
-                        .anyRequest()
-                        .authenticated())
+                                                // Xem lịch + tham gia
+                                                .requestMatchers(
+                                                                "/schedules",
+                                                                "/schedules/register/**",
+                                                                "/schedules/cancel-registration/**",
+                                                                "/schedules/participants/**")
+                                                .hasAnyRole("ADMIN", "MEMBER", "TREASURER")
 
-                .formLogin(form -> form
+                                                // Dashboard chỉ Admin
+                                                .requestMatchers("/dashboard")
+                                                .hasRole("ADMIN")
 
-                        .loginPage("/login")
-                        .defaultSuccessUrl("/")
-                        .permitAll())
+                                                // Các route còn lại phải đăng nhập
+                                                .anyRequest()
+                                                .authenticated())
 
-                .logout(logout -> logout
-                        .logoutSuccessUrl("/login?logout"))
+                                .formLogin(form -> form
+                                                .loginPage("/login")
+                                                .defaultSuccessUrl("/")
+                                                .permitAll())
 
-                .userDetailsService(customUserDetailsService);
+                                .logout(logout -> logout
+                                                .logoutSuccessUrl("/login?logout"))
 
-        return http.build();
-    }
+                                .userDetailsService(customUserDetailsService);
+
+                return http.build();
+        }
 }

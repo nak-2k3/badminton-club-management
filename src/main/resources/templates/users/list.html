@@ -9,60 +9,121 @@
       rel="stylesheet"
     />
   </head>
+
   <body>
     <div th:replace="~{fragments/navbar :: navbar}"></div>
+
     <div class="container mt-5">
-      <h2 class="mb-4">Danh sách thành viên</h2>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2>Danh sách thành viên</h2>
 
-      <a href="/users/create" class="btn btn-success mb-3"> Thêm thành viên </a>
+          <span class="badge bg-primary fs-6">
+            Tổng số thành viên:
+            <span th:text="${totalUsers}"></span>
+          </span>
+        </div>
 
-      <table class="table table-bordered table-striped">
-        <thead class="table-dark">
-          <tr>
-            <th>ID</th>
-            <th>Họ tên</th>
-            <th>Email</th>
-            <th>SĐT</th>
-            <th>Vai trò</th>
-            <th>Trình độ</th>
-            <th>Hành động</th>
-          </tr>
-        </thead>
+        <a href="/users/create" class="btn btn-success"> Thêm thành viên </a>
+      </div>
 
-        <tbody>
-          <tr th:each="user : ${users}">
-            <td th:text="${user.id}"></td>
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th>STT</th>
+              <th>ID</th>
+              <th>Họ tên</th>
+              <th>Email</th>
+              <th>SĐT</th>
+              <th>Giới tính</th>
+              <th>Ngày sinh</th>
+              <th>Vai trò</th>
+              <th>Trình độ</th>
+              <th>Ngày tham gia</th>
+              <th>Trạng thái</th>
+              <th width="190">Hành động</th>
+            </tr>
+          </thead>
 
-            <td th:text="${user.fullName}"></td>
+          <tbody>
+            <tr th:each="user, stat : ${users}">
+              <td th:text="${stat.count}"></td>
 
-            <td th:text="${user.email}"></td>
+              <td th:text="${user.id}"></td>
 
-            <td th:text="${user.phone}"></td>
+              <td th:text="${user.fullName}"></td>
 
-            <td th:text="${user.role}"></td>
+              <td th:text="${user.email}"></td>
 
-            <td th:text="${user.level}"></td>
+              <td th:text="${user.phone}"></td>
 
-            <td>
-              <a
-                th:href="@{/users/edit/{id}(id=${user.id})}"
-                class="btn btn-warning btn-sm"
-              >
-                Sửa
-              </a>
+              <td
+                th:text="${user.gender != null ? user.gender.displayName : 'Chưa cập nhật'}"
+              ></td>
 
-              <a
-                th:href="@{/users/delete/{id}(id=${user.id})}"
-                class="btn btn-danger btn-sm"
-                onclick="return confirm('Bạn có chắc muốn xóa?');"
-              >
-                Xóa
-              </a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              <td
+                th:text="${user.birthDate != null ? #temporals.format(user.birthDate, 'dd/MM/yyyy') : 'Chưa cập nhật'}"
+              ></td>
+
+              <td
+                th:text="${user.role != null ? user.role.displayName : 'Chưa cập nhật'}"
+              ></td>
+
+              <td
+                th:text="${user.level != null ? user.level.displayName : 'Chưa cập nhật'}"
+              ></td>
+
+              <td
+                th:text="${user.joinDate != null ? #temporals.format(user.joinDate, 'dd/MM/yyyy') : 'Chưa cập nhật'}"
+              ></td>
+
+              <td>
+                <span th:if="${user.enabled}" class="badge bg-success">
+                  Hoạt động
+                </span>
+
+                <span th:unless="${user.enabled}" class="badge bg-danger">
+                  Đã khóa
+                </span>
+              </td>
+
+              <td>
+                <a
+                  th:href="@{/users/edit/{id}(id=${user.id})}"
+                  class="btn btn-warning btn-sm"
+                >
+                  Sửa
+                </a>
+
+                <a
+                  th:if="${user.enabled}"
+                  th:href="@{/users/lock/{id}(id=${user.id})}"
+                  class="btn btn-danger btn-sm"
+                  onclick="
+                    return confirm('Bạn có chắc muốn khóa tài khoản này?');
+                  "
+                >
+                  Khóa
+                </a>
+
+                <a
+                  th:unless="${user.enabled}"
+                  th:href="@{/users/unlock/{id}(id=${user.id})}"
+                  class="btn btn-success btn-sm"
+                  onclick="
+                    return confirm('Bạn có chắc muốn mở khóa tài khoản này?');
+                  "
+                >
+                  Mở khóa
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>

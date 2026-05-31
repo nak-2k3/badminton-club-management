@@ -57,22 +57,44 @@
 
         <div class="mb-3">
           <label>Vai trò</label>
-
           <select th:field="*{role}" class="form-select">
-            <option value="MEMBER">Member</option>
-            <option value="ADMIN">Admin</option>
-            <option value="TREASURER">Treasurer</option>
+            <option value="ADMIN">ADMIN</option>
+            <option value="MEMBER">MEMBER</option>
+            <option value="TREASURER">TREASURER</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label>Giới tính</label>
+          <select th:field="*{gender}" class="form-select">
+            <option value="MALE">Nam</option>
+            <option value="FEMALE">Nữ</option>
+            <option value="OTHER">Khác</option>
           </select>
         </div>
 
         <div class="mb-3">
           <label>Trình độ</label>
-
           <select th:field="*{level}" class="form-select">
-            <option value="Beginner">Beginner</option>
-            <option value="Intermediate">Intermediate</option>
-            <option value="Advanced">Advanced</option>
+            <option value="BEGINNER">Beginner</option>
+            <option value="INTERMEDIATE">Intermediate</option>
+            <option value="ADVANCED">Advanced</option>
           </select>
+        </div>
+
+        <div class="mb-3">
+          <label>Ngày sinh</label>
+          <input type="date" th:field="*{birthDate}" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+          <label>Địa chỉ</label>
+          <input type="text" th:field="*{address}" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+          <label>Ngày tham gia CLB</label>
+          <input type="date" th:field="*{joinDate}" class="form-control" />
         </div>
 
         <button type="submit" class="btn btn-primary">Lưu thành viên</button>

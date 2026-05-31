@@ -7,13 +7,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface RegistrationRepository
-        extends JpaRepository<Registration, Long> {
+                extends JpaRepository<Registration, Long> {
 
-    int countBySchedule(Schedule schedule);
+        int countBySchedule(Schedule schedule);
 
-    boolean existsByUserAndSchedule(
-            User user,
-            Schedule schedule);
+        Registration findByUserAndSchedule(User user, Schedule schedule);
 
-    List<Registration> findBySchedule(Schedule schedule);
+        boolean existsByUserAndSchedule(
+                        User user,
+                        Schedule schedule);
+
+        List<Registration> findBySchedule(Schedule schedule);
 }

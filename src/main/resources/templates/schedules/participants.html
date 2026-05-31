@@ -13,33 +13,58 @@
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
     <div class="container mt-5">
-      <h2 class="mb-4">Danh sách người tham gia</h2>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2>Danh sách người tham gia</h2>
 
-      <table class="table table-bordered">
-        <thead class="table-dark">
-          <tr>
-            <th>ID</th>
+          <p class="mb-0">
+            <strong>Lịch:</strong>
+            <span th:text="${schedule.title}"></span>
+            -
+            <span
+              th:text="${schedule.playTime != null ? #temporals.format(schedule.playTime, 'dd/MM/yyyy HH:mm') : 'Chưa cập nhật'}"
+            ></span>
+          </p>
+        </div>
 
-            <th>Họ tên</th>
+        <a href="/schedules" class="btn btn-secondary"> Quay lại </a>
+      </div>
 
-            <th>Email</th>
+      <div th:if="${#lists.isEmpty(registrations)}" class="alert alert-info">
+        Chưa có thành viên nào tham gia lịch này.
+      </div>
 
-            <th>Trình độ</th>
-          </tr>
-        </thead>
+      <div class="table-responsive" th:if="${!#lists.isEmpty(registrations)}">
+        <table class="table table-bordered table-striped align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th>STT</th>
+              <th>ID thành viên</th>
+              <th>Họ tên</th>
+              <th>Email</th>
+              <th>Trình độ</th>
+            </tr>
+          </thead>
 
-        <tbody>
-          <tr th:each="registration : ${registrations}">
-            <td th:text="${registration.user.id}"></td>
+          <tbody>
+            <tr th:each="registration, stat : ${registrations}">
+              <td th:text="${stat.count}"></td>
 
-            <td th:text="${registration.user.fullName}"></td>
+              <td th:text="${registration.user.id}"></td>
 
-            <td th:text="${registration.user.email}"></td>
+              <td th:text="${registration.user.fullName}"></td>
 
-            <td th:text="${registration.user.level}"></td>
-          </tr>
-        </tbody>
-      </table>
+              <td th:text="${registration.user.email}"></td>
+
+              <td
+                th:text="${registration.user.level != null ? registration.user.level.displayName : 'Chưa cập nhật'}"
+              ></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>

@@ -4,7 +4,7 @@ import com.badmintonclub.clubmanagement.entity.Schedule;
 import com.badmintonclub.clubmanagement.repository.ScheduleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import com.badmintonclub.clubmanagement.entity.enums.ScheduleStatus;
 import java.util.List;
 
 @Service
@@ -27,5 +27,32 @@ public class ScheduleService {
 
     public void deleteSchedule(Long id) {
         scheduleRepository.deleteById(id);
+    }
+
+    public void cancelSchedule(Long id) {
+        Schedule schedule = getScheduleById(id);
+
+        if (schedule != null) {
+            schedule.setStatus(ScheduleStatus.CANCELLED);
+            scheduleRepository.save(schedule);
+        }
+    }
+
+    public void lockSchedule(Long id) {
+        Schedule schedule = getScheduleById(id);
+
+        if (schedule != null) {
+            schedule.setStatus(ScheduleStatus.LOCKED);
+            scheduleRepository.save(schedule);
+        }
+    }
+
+    public void openSchedule(Long id) {
+        Schedule schedule = getScheduleById(id);
+
+        if (schedule != null) {
+            schedule.setStatus(ScheduleStatus.OPEN);
+            scheduleRepository.save(schedule);
+        }
     }
 }

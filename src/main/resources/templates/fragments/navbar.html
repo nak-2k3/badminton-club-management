@@ -29,19 +29,47 @@
             <li class="nav-item" sec:authorize="hasRole('ADMIN')">
               <a class="nav-link" href="/users"> Thành viên </a>
             </li>
+
+            <li class="nav-item">
+              <a class="nav-link" href="/schedules"> Lịch đánh </a>
+            </li>
+
+            <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+              <a class="nav-link" href="/dashboard"> Thống kê </a>
+            </li>
           </ul>
-          <span class="text-light me-3">
-            Xin chào,
-            <span sec:authentication="name"></span>
-          </span>
-          <span class="text-warning me-3">
-            Role:
-            <span sec:authentication="principal.authorities"></span>
-          </span>
-          <div class="d-flex">
+
+          <div
+            sec:authorize="isAuthenticated()"
+            class="d-flex align-items-center"
+          >
+            <span class="text-light me-3">
+              Xin chào,
+              <span sec:authentication="name"></span>
+            </span>
+
+            <span class="text-warning me-3" sec:authorize="hasRole('ADMIN')">
+              Quản trị viên
+            </span>
+
+            <span class="text-warning me-3" sec:authorize="hasRole('MEMBER')">
+              Thành viên
+            </span>
+
+            <span
+              class="text-warning me-3"
+              sec:authorize="hasRole('TREASURER')"
+            >
+              Thủ quỹ
+            </span>
+
             <form th:action="@{/logout}" method="post">
               <button class="btn btn-outline-light">Đăng xuất</button>
             </form>
+          </div>
+
+          <div sec:authorize="!isAuthenticated()">
+            <a href="/login" class="btn btn-outline-light"> Đăng nhập </a>
           </div>
         </div>
       </div>
