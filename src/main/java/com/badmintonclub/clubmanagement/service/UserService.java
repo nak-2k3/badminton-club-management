@@ -119,4 +119,8 @@ public class UserService {
 
         return true;
     }
+
+    public List<User> getActiveUsers() {
+        return userRepository.findByEnabledTrue();
+    }
 }
