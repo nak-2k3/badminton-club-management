@@ -96,4 +96,12 @@ public class RegistrationService {
     public long countRegistrations() {
         return registrationRepository.count();
     }
+
+    public List<Registration> getRegistrationsByUser(User user) {
+        return registrationRepository.findByUser(user);
+    }
+
+    public int countByUser(User user) {
+        return registrationRepository.countByUser(user);
+    }
 }

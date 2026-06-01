@@ -13,8 +13,8 @@
   <body>
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <div class="container mt-5">
-      <div class="card shadow-sm">
+    <div class="container mt-5 mb-5">
+      <div class="card shadow-sm mb-4">
         <div class="card-header bg-dark text-white">
           <h4 class="mb-0">Hồ sơ cá nhân</h4>
         </div>
@@ -83,7 +83,7 @@
             ></div>
           </div>
 
-          <div class="row mb-3">
+          <div class="row mb-4">
             <div class="col-md-3 fw-bold">Trạng thái:</div>
             <div class="col-md-9">
               <span th:if="${user.enabled}" class="badge bg-success">
@@ -95,10 +95,72 @@
               </span>
             </div>
           </div>
-          <a href="/profile/edit" class="btn btn-primary"> Chỉnh sửa hồ sơ </a>
-          <a href="/profile/change-password" class="btn btn-warning">
-            Đổi mật khẩu
-          </a>
+
+          <div class="d-flex gap-2">
+            <a href="/profile/edit" class="btn btn-primary">
+              Chỉnh sửa hồ sơ
+            </a>
+
+            <a href="/profile/change-password" class="btn btn-warning">
+              Đổi mật khẩu
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Lịch sử tham gia</h5>
+        </div>
+
+        <div class="card-body">
+          <div class="alert alert-info">
+            Đã đăng ký:
+            <strong th:text="${totalJoined}"></strong>
+            buổi
+          </div>
+
+          <div
+            th:if="${#lists.isEmpty(myRegistrations)}"
+            class="alert alert-secondary"
+          >
+            Bạn chưa đăng ký buổi đánh nào.
+          </div>
+
+          <div
+            class="table-responsive"
+            th:if="${!#lists.isEmpty(myRegistrations)}"
+          >
+            <table class="table table-bordered table-striped align-middle">
+              <thead class="table-dark">
+                <tr>
+                  <th>STT</th>
+                  <th>Tiêu đề</th>
+                  <th>Sân</th>
+                  <th>Thời gian</th>
+                  <th>Trạng thái lịch</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr th:each="registration, stat : ${myRegistrations}">
+                  <td th:text="${stat.count}"></td>
+
+                  <td th:text="${registration.schedule.title}"></td>
+
+                  <td th:text="${registration.schedule.courtName}"></td>
+
+                  <td
+                    th:text="${registration.schedule.playTime != null ? #temporals.format(registration.schedule.playTime, 'dd/MM/yyyy HH:mm') : 'Chưa cập nhật'}"
+                  ></td>
+
+                  <td
+                    th:text="${registration.schedule.status != null ? registration.schedule.status.displayName : 'Chưa cập nhật'}"
+                  ></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

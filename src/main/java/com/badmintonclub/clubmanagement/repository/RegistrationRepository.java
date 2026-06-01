@@ -11,6 +11,10 @@ public interface RegistrationRepository
 
         int countBySchedule(Schedule schedule);
 
+        List<Registration> findByUser(User user);
+
+        int countByUser(User user);
+
         Registration findByUserAndSchedule(User user, Schedule schedule);
 
         boolean existsByUserAndSchedule(

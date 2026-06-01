@@ -1,6 +1,7 @@
 package com.badmintonclub.clubmanagement.controller;
 
 import com.badmintonclub.clubmanagement.entity.User;
+import com.badmintonclub.clubmanagement.service.RegistrationService;
 import com.badmintonclub.clubmanagement.service.UserService;
 
 import jakarta.validation.Valid;
@@ -21,6 +22,8 @@ public class ProfileController {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private RegistrationService registrationService;
 
     @GetMapping("/profile")
     public String profile(Model model, Principal principal) {
@@ -28,6 +31,8 @@ public class ProfileController {
         User user = userService.findByEmail(principal.getName());
 
         model.addAttribute("user", user);
+        model.addAttribute("totalJoined", registrationService.countByUser(user));
+        model.addAttribute("myRegistrations", registrationService.getRegistrationsByUser(user));
 
         return "profile";
     }
