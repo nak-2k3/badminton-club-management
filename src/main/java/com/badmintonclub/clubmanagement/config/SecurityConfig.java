@@ -80,6 +80,9 @@ public class SecurityConfig {
 
                                                 .requestMatchers("/payments/**")
                                                 .hasAnyRole("ADMIN", "TREASURER")
+
+                                                .requestMatchers("/fee-settings/**")
+                                                .hasAnyRole("ADMIN", "TREASURER")
                                                 // Các route còn lại phải đăng nhập
                                                 .anyRequest()
                                                 .authenticated())

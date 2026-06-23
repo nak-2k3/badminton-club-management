@@ -19,13 +19,15 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Thành viên đóng phí
+    // Thuộc đợt thu nào
+    @ManyToOne
+    @JoinColumn(name = "batch_id")
+    private PaymentBatch batch;
+
+    // Thành viên phải đóng
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
-
-    // Tháng thu phí, ví dụ: 06/2026
-    private String month;
 
     @NotNull(message = "Số tiền không được để trống")
     @Min(value = 1000, message = "Số tiền phải lớn hơn 0")
@@ -35,6 +37,8 @@ public class Payment {
     private PaymentStatus status = PaymentStatus.UNPAID;
 
     private LocalDate paidDate;
+
+    private String paymentMethod;
 
     @Column(length = 500)
     private String note;
