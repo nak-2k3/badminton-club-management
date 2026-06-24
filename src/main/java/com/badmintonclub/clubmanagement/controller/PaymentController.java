@@ -7,6 +7,7 @@ import com.badmintonclub.clubmanagement.entity.enums.PaymentStatus;
 import com.badmintonclub.clubmanagement.service.FeeSettingService;
 import com.badmintonclub.clubmanagement.service.PaymentBatchService;
 import com.badmintonclub.clubmanagement.service.PaymentService;
+import com.badmintonclub.clubmanagement.service.UserService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -27,6 +28,9 @@ public class PaymentController {
 
     @Autowired
     private FeeSettingService feeSettingService;
+
+    @Autowired
+    private UserService userService;
 
     @GetMapping("/payments")
     public String listPaymentBatches(Model model) {
@@ -184,5 +188,40 @@ public class PaymentController {
         paymentService.savePayment(payment);
 
         return "redirect:/payments/detail/" + batchId;
+    }
+
+    @GetMapping("/payments/create-event")
+    public String showCreateEventForm(Model model) {
+
+        PaymentBatch batch = new PaymentBatch();
+
+        model.addAttribute("batch", batch);
+        model.addAttribute("users", userService.getActiveUsers());
+
+        return "payments/create-event";
+    }
+
+    @PostMapping("/payments/create-event")
+    public String createEventPayment(
+            @ModelAttribute PaymentBatch batch,
+            @RequestParam Integer amount,
+            @RequestParam String applyType,
+            @RequestParam(required = false) List<Long> userIds) {
+
+        PaymentBatch savedBatch = paymentBatchService.saveBatch(batch);
+
+        if ("ALL".equals(applyType)) {
+            paymentService.createEventPayments(
+                    savedBatch,
+                    amount,
+                    null);
+        } else {
+            paymentService.createEventPayments(
+                    savedBatch,
+                    amount,
+                    userIds);
+        }
+
+        return "redirect:/payments/detail/" + savedBatch.getId();
     }
 }

@@ -68,7 +68,6 @@
                 </li>
               </ul>
             </li>
-
             <li class="nav-item" sec:authorize="hasRole('ADMIN')">
               <a class="nav-link" th:href="@{/dashboard}"> Thống kê </a>
             </li>
@@ -118,7 +117,11 @@
                   Hồ sơ cá nhân
                 </a>
               </li>
-
+              <li>
+                <a class="dropdown-item" th:href="@{/my-payments}">
+                  Khoản phí của tôi
+                </a>
+              </li>
               <li>
                 <hr class="dropdown-divider" />
               </li>

@@ -1,0 +1,189 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tạo khoản thu phát sinh</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container mt-5 mb-5">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Tạo khoản thu phát sinh</h2>
+
+        <a th:href="@{/payments}" class="btn btn-secondary"> Quay lại </a>
+      </div>
+
+      <form
+        th:action="@{/payments/create-event}"
+        th:object="${batch}"
+        method="post"
+      >
+        <div class="mb-3">
+          <label class="form-label">Tên khoản thu</label>
+
+          <input
+            type="text"
+            th:field="*{title}"
+            class="form-control"
+            placeholder="Ví dụ: Tiền áo CLB năm 2026"
+            required
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Tháng / đợt thu</label>
+
+          <input
+            type="text"
+            th:field="*{month}"
+            class="form-control"
+            placeholder="Ví dụ: 06/2026 hoặc Đợt áo CLB 2026"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Số tiền mặc định</label>
+
+          <input
+            type="number"
+            name="amount"
+            class="form-control"
+            min="1000"
+            step="1000"
+            placeholder="Ví dụ: 250000"
+            required
+          />
+
+          <div class="form-text">
+            Nhập số tiền không dùng dấu chấm. Ví dụ: 250000
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Hạn chót đóng</label>
+
+          <input
+            type="text"
+            name="dueDate"
+            class="form-control date-format"
+            placeholder="Ví dụ: 20/06/2026"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Ghi chú</label>
+
+          <textarea
+            th:field="*{note}"
+            class="form-control"
+            rows="3"
+            placeholder="Ví dụ: Thu tiền áo CLB mẫu mới năm 2026"
+          >
+          </textarea>
+        </div>
+
+        <div class="card mb-4">
+          <div class="card-header bg-dark text-white">Đối tượng áp dụng</div>
+
+          <div class="card-body">
+            <div class="form-check mb-2">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="applyType"
+                id="applyAll"
+                value="ALL"
+                checked
+              />
+
+              <label class="form-check-label" for="applyAll">
+                Áp dụng cho tất cả thành viên đang hoạt động
+              </label>
+            </div>
+
+            <div class="form-check mb-3">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="applyType"
+                id="applySelected"
+                value="SELECTED"
+              />
+
+              <label class="form-check-label" for="applySelected">
+                Chọn thủ công từ danh sách
+              </label>
+            </div>
+
+            <div class="border rounded p-3 bg-light">
+              <div class="mb-2 fw-bold">Danh sách thành viên</div>
+
+              <div class="row">
+                <div class="col-md-4 mb-2" th:each="user : ${users}">
+                  <div class="form-check">
+                    <input
+                      class="form-check-input member-checkbox"
+                      type="checkbox"
+                      name="userIds"
+                      th:value="${user.id}"
+                    />
+
+                    <label class="form-check-label">
+                      <span th:text="${user.fullName}"></span>
+                      -
+                      <small
+                        class="text-muted"
+                        th:text="${user.gender != null ? user.gender.displayName : 'Chưa cập nhật'}"
+                      >
+                      </small>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div th:if="${#lists.isEmpty(users)}" class="text-muted">
+                Chưa có thành viên đang hoạt động.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-info">
+          Nếu chọn <strong>Áp dụng cho tất cả</strong>, hệ thống sẽ tự tạo khoản
+          thu cho toàn bộ thành viên đang hoạt động. Nếu chọn
+          <strong>Chọn thủ công</strong>, hệ thống chỉ tạo khoản thu cho những
+          thành viên được tick.
+        </div>
+
+        <button type="submit" class="btn btn-primary">Tạo khoản thu</button>
+      </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      document.querySelectorAll(".date-format").forEach(function (input) {
+        input.addEventListener("input", function () {
+          let value = input.value.replace(/\D/g, "");
+
+          if (value.length > 2) {
+            value = value.substring(0, 2) + "/" + value.substring(2);
+          }
+
+          if (value.length > 5) {
+            value = value.substring(0, 5) + "/" + value.substring(5, 9);
+          }
+
+          input.value = value;
+        });
+      });
+    </script>
+  </body>
+</html>

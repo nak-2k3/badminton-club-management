@@ -150,4 +150,35 @@ public class PaymentService {
 
         return (int) Math.round((paid * 100.0) / total);
     }
+
+    public void createEventPayments(
+            PaymentBatch batch,
+            Integer amount,
+            List<Long> userIds) {
+        List<User> users;
+
+        if (userIds == null || userIds.isEmpty()) {
+            users = userRepository.findByEnabledTrue();
+        } else {
+            users = userRepository.findAllById(userIds);
+        }
+
+        for (User user : users) {
+            if (!user.isEnabled()) {
+                continue;
+            }
+
+            Payment payment = new Payment();
+
+            payment.setBatch(batch);
+            payment.setUser(user);
+            payment.setAmount(amount);
+            payment.setStatus(PaymentStatus.UNPAID);
+            payment.setPaidDate(null);
+            payment.setPaymentMethod(null);
+            payment.setNote(batch.getNote());
+
+            paymentRepository.save(payment);
+        }
+    }
 }
