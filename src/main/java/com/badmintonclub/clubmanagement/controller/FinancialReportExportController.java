@@ -8,6 +8,9 @@ import com.badmintonclub.clubmanagement.service.PaymentService;
 
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -56,12 +59,14 @@ public class FinancialReportExportController {
                 startDate,
                 endDate);
 
-        Long balance = paidAmount - expenseAmount;
+        Long balance = safeLong(paidAmount) - safeLong(expenseAmount);
 
         List<PaymentBatch> batches = paymentBatchService.getBatchesByMonth(month);
         List<Expense> expenses = expenseService.getExpensesBetween(startDate, endDate);
 
         Workbook workbook = new XSSFWorkbook();
+
+        CellStyle moneyStyle = createMoneyStyle(workbook);
 
         Sheet summarySheet = workbook.createSheet("Tong quan");
         createSummarySheet(
@@ -71,13 +76,17 @@ public class FinancialReportExportController {
                 paidAmount,
                 unpaidAmount,
                 expenseAmount,
-                balance);
+                balance,
+                moneyStyle);
 
         Sheet incomeSheet = workbook.createSheet("Khoan thu");
         createIncomeSheet(incomeSheet, batches);
 
         Sheet expenseSheet = workbook.createSheet("Khoan chi");
-        createExpenseSheet(expenseSheet, expenses);
+        createExpenseSheet(
+                expenseSheet,
+                expenses,
+                moneyStyle);
 
         response.setContentType(
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -97,29 +106,30 @@ public class FinancialReportExportController {
             Long paidAmount,
             Long unpaidAmount,
             Long expenseAmount,
-            Long balance) {
+            Long balance,
+            CellStyle moneyStyle) {
         Row titleRow = sheet.createRow(0);
         titleRow.createCell(0).setCellValue("Báo cáo thu chi tháng " + month);
 
         Row row1 = sheet.createRow(2);
         row1.createCell(0).setCellValue("Tổng phải thu");
-        row1.createCell(1).setCellValue(totalAmount);
+        setMoneyCell(row1, 1, totalAmount, moneyStyle);
 
         Row row2 = sheet.createRow(3);
         row2.createCell(0).setCellValue("Đã thu");
-        row2.createCell(1).setCellValue(paidAmount);
+        setMoneyCell(row2, 1, paidAmount, moneyStyle);
 
         Row row3 = sheet.createRow(4);
         row3.createCell(0).setCellValue("Chưa thu");
-        row3.createCell(1).setCellValue(unpaidAmount);
+        setMoneyCell(row3, 1, unpaidAmount, moneyStyle);
 
         Row row4 = sheet.createRow(5);
         row4.createCell(0).setCellValue("Đã chi");
-        row4.createCell(1).setCellValue(expenseAmount);
+        setMoneyCell(row4, 1, expenseAmount, moneyStyle);
 
         Row row5 = sheet.createRow(6);
         row5.createCell(0).setCellValue("Quỹ còn lại trong tháng");
-        row5.createCell(1).setCellValue(balance);
+        setMoneyCell(row5, 1, balance, moneyStyle);
 
         sheet.autoSizeColumn(0);
         sheet.autoSizeColumn(1);
@@ -163,7 +173,8 @@ public class FinancialReportExportController {
 
     private void createExpenseSheet(
             Sheet sheet,
-            List<Expense> expenses) {
+            List<Expense> expenses,
+            CellStyle moneyStyle) {
         Row header = sheet.createRow(0);
 
         header.createCell(0).setCellValue("STT");
@@ -181,7 +192,8 @@ public class FinancialReportExportController {
 
             row.createCell(0).setCellValue(stt++);
             row.createCell(1).setCellValue(expense.getTitle());
-            row.createCell(2).setCellValue(expense.getAmount());
+
+            setMoneyCell(row, 2, expense.getAmount(), moneyStyle);
 
             row.createCell(3).setCellValue(
                     expense.getExpenseDate() != null
@@ -201,5 +213,44 @@ public class FinancialReportExportController {
         for (int i = 0; i <= 5; i++) {
             sheet.autoSizeColumn(i);
         }
+    }
+
+    private CellStyle createMoneyStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+
+        DataFormat format = workbook.createDataFormat();
+
+        style.setDataFormat(
+                format.getFormat("#,##0 \"VNĐ\";[Red]-#,##0 \"VNĐ\""));
+
+        return style;
+    }
+
+    private void setMoneyCell(
+            Row row,
+            int cellIndex,
+            Long value,
+            CellStyle moneyStyle) {
+        Cell cell = row.createCell(cellIndex);
+
+        cell.setCellValue(value != null ? value : 0);
+
+        cell.setCellStyle(moneyStyle);
+    }
+
+    private void setMoneyCell(
+            Row row,
+            int cellIndex,
+            Integer value,
+            CellStyle moneyStyle) {
+        Cell cell = row.createCell(cellIndex);
+
+        cell.setCellValue(value != null ? value : 0);
+
+        cell.setCellStyle(moneyStyle);
+    }
+
+    private Long safeLong(Long value) {
+        return value != null ? value : 0L;
     }
 }
