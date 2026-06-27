@@ -86,6 +86,12 @@ public class SecurityConfig {
 
                                                 .requestMatchers("/my-payments")
                                                 .hasAnyRole("ADMIN", "MEMBER", "TREASURER")
+
+                                                .requestMatchers("/expenses/**")
+                                                .hasAnyRole("ADMIN", "TREASURER")
+
+                                                .requestMatchers("/reports/**")
+                                                .hasAnyRole("ADMIN", "TREASURER")
                                                 // Các route còn lại phải đăng nhập
                                                 .anyRequest()
                                                 .authenticated())

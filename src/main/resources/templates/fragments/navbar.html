@@ -66,6 +66,16 @@
                     Định mức phí
                   </a>
                 </li>
+                <li>
+                  <a class="dropdown-item" th:href="@{/expenses}">
+                    Quản lý khoản chi
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" th:href="@{/reports/finance}">
+                    Báo cáo thu chi
+                  </a>
+                </li>
               </ul>
             </li>
             <li class="nav-item" sec:authorize="hasRole('ADMIN')">

@@ -1,0 +1,119 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cập nhật khoản chi</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+  </head>
+
+  <body>
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container mt-5 mb-5">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Cập nhật khoản chi</h2>
+
+        <a th:href="@{/expenses}" class="btn btn-secondary"> Quay lại </a>
+      </div>
+
+      <form th:action="@{/expenses/save}" th:object="${expense}" method="post">
+        <input type="hidden" th:field="*{id}" />
+
+        <div class="mb-3">
+          <label class="form-label">Tên khoản chi</label>
+
+          <input
+            type="text"
+            th:field="*{title}"
+            class="form-control"
+            required
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Số tiền</label>
+
+          <input
+            type="number"
+            th:field="*{amount}"
+            class="form-control"
+            min="1000"
+            step="1000"
+            required
+          />
+
+          <div class="form-text">
+            Nhập số tiền không dùng dấu chấm. Ví dụ: 3000000
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Ngày chi</label>
+
+          <input
+            type="text"
+            name="expenseDate"
+            class="form-control date-picker"
+            th:value="${expense.expenseDate != null ? #temporals.format(expense.expenseDate, 'dd/MM/yyyy') : ''}"
+            placeholder="Chọn ngày chi"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Hình thức chi</label>
+
+          <select th:field="*{paymentMethod}" class="form-select">
+            <option value="Tiền mặt">Tiền mặt</option>
+            <option value="Chuyển khoản">Chuyển khoản</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Ghi chú</label>
+
+          <textarea th:field="*{note}" class="form-control" rows="3">
+          </textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Cập nhật</button>
+      </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      document.querySelectorAll(".date-format").forEach(function (input) {
+        input.addEventListener("input", function () {
+          let value = input.value.replace(/\D/g, "");
+
+          if (value.length > 2) {
+            value = value.substring(0, 2) + "/" + value.substring(2);
+          }
+
+          if (value.length > 5) {
+            value = value.substring(0, 5) + "/" + value.substring(5, 9);
+          }
+
+          input.value = value;
+        });
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <script>
+      flatpickr(".date-picker", {
+        dateFormat: "d/m/Y",
+        allowInput: true,
+      });
+    </script>
+  </body>
+</html>

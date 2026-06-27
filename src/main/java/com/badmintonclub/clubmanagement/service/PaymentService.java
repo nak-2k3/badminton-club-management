@@ -193,4 +193,33 @@ public class PaymentService {
     public Long getUnpaidAmount() {
         return paymentRepository.sumAmountByStatus(PaymentStatus.UNPAID);
     }
+
+    // chi thu theo tháng
+    public Long getTotalAmountByMonth(String month) {
+        return paymentRepository.sumAmountByMonth(month);
+    }
+
+    public Long getPaidAmountByMonth(String month) {
+        return paymentRepository.sumAmountByMonthAndStatus(
+                month,
+                PaymentStatus.PAID);
+    }
+
+    public Long getUnpaidAmountByMonth(String month) {
+        return paymentRepository.sumAmountByMonthAndStatus(
+                month,
+                PaymentStatus.UNPAID);
+    }
+
+    public long countPaidByMonth(String month) {
+        return paymentRepository.countByMonthAndStatus(
+                month,
+                PaymentStatus.PAID);
+    }
+
+    public long countUnpaidByMonth(String month) {
+        return paymentRepository.countByMonthAndStatus(
+                month,
+                PaymentStatus.UNPAID);
+    }
 }

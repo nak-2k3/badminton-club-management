@@ -33,4 +33,9 @@ public class PaymentBatchService {
     public boolean existsMonthlyBatchByMonth(String month) {
         return paymentBatchRepository.existsByBatchTypeAndMonth("MONTHLY", month);
     }
+
+    // chi thu theo tháng
+    public List<PaymentBatch> getBatchesByMonth(String month) {
+        return paymentBatchRepository.findByMonthOrderByIdDesc(month);
+    }
 }

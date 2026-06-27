@@ -13,4 +13,7 @@ public interface PaymentBatchRepository extends JpaRepository<PaymentBatch, Long
     boolean existsByTitleAndMonth(String title, String month);
 
     boolean existsByBatchTypeAndMonth(String batchType, String month);
+
+    // báo cáo chi thu theo tháng
+    List<PaymentBatch> findByMonthOrderByIdDesc(String month);
 }

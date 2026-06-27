@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import com.badmintonclub.clubmanagement.service.ExpenseService;
 import com.badmintonclub.clubmanagement.service.PaymentService;
 import com.badmintonclub.clubmanagement.service.RegistrationService;
 
@@ -26,6 +27,9 @@ public class DashboardController {
         @Autowired
         private PaymentService paymentService;
 
+        @Autowired
+        private ExpenseService expenseService;
+
         @GetMapping("/dashboard")
         public String dashboard(Model model) {
 
@@ -41,7 +45,13 @@ public class DashboardController {
                 model.addAttribute("unpaidPaymentAmount", paymentService.getUnpaidAmount());
                 model.addAttribute("paidPaymentCount", paymentService.countPaid());
                 model.addAttribute("unpaidPaymentCount", paymentService.countUnpaid());
+                Long paidAmount = paymentService.getPaidAmount();
+                Long expenseAmount = expenseService.getTotalExpenseAmount();
+                Long currentFund = paidAmount - expenseAmount;
 
+                model.addAttribute("totalExpenseAmount", expenseAmount);
+                model.addAttribute("currentFund", currentFund);
+                model.addAttribute("totalExpenses", expenseService.countExpenses());
                 return "dashboard";
         }
 }

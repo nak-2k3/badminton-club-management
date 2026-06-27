@@ -36,4 +36,18 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.status = :status")
     Long sumAmountByStatus(@Param("status") PaymentStatus status);
+
+    // báo cáo chi thu theo tháng
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.batch.month = :month")
+    Long sumAmountByMonth(@Param("month") String month);
+
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.batch.month = :month AND p.status = :status")
+    Long sumAmountByMonthAndStatus(
+            @Param("month") String month,
+            @Param("status") PaymentStatus status);
+
+    @Query("SELECT COUNT(p) FROM Payment p WHERE p.batch.month = :month AND p.status = :status")
+    long countByMonthAndStatus(
+            @Param("month") String month,
+            @Param("status") PaymentStatus status);
 }

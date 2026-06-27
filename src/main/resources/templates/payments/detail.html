@@ -31,9 +31,10 @@
         <a th:href="@{/payments}" class="btn btn-secondary"> Quay lại </a>
       </div>
 
+      <!-- Thống kê tổng quan -->
       <div class="row mb-4">
         <div class="col-md-3">
-          <div class="card text-bg-primary">
+          <div class="card text-bg-primary shadow-sm">
             <div class="card-body">
               <h6>Tổng phải thu</h6>
               <h4
@@ -44,7 +45,7 @@
         </div>
 
         <div class="col-md-3">
-          <div class="card text-bg-success">
+          <div class="card text-bg-success shadow-sm">
             <div class="card-body">
               <h6>Đã thu</h6>
               <h4
@@ -55,7 +56,7 @@
         </div>
 
         <div class="col-md-3">
-          <div class="card text-bg-danger">
+          <div class="card text-bg-danger shadow-sm">
             <div class="card-body">
               <h6>Còn thiếu</h6>
               <h4
@@ -66,7 +67,7 @@
         </div>
 
         <div class="col-md-3">
-          <div class="card text-bg-dark">
+          <div class="card text-bg-dark shadow-sm">
             <div class="card-body">
               <h6>Tiến độ</h6>
               <h4 th:text="${progressPercent} + '%'"></h4>
@@ -75,7 +76,8 @@
         </div>
       </div>
 
-      <div class="mb-3">
+      <!-- Thanh tiến độ -->
+      <div class="mb-4">
         <div class="progress" style="height: 25px">
           <div
             class="progress-bar"
@@ -86,112 +88,212 @@
         </div>
       </div>
 
-      <table class="table table-bordered table-striped align-middle">
-        <thead class="table-dark">
-          <tr>
-            <th>STT</th>
-            <th>Thành viên</th>
-            <th>Giới tính</th>
-            <th>Số tiền phải đóng</th>
-            <th>Trạng thái</th>
-            <th>Ngày đóng</th>
-            <th>Hình thức</th>
-            <th>Ghi chú</th>
-            <th>Hành động</th>
-          </tr>
-        </thead>
+      <!-- Bộ lọc -->
+      <div class="card mb-3 shadow-sm">
+        <div class="card-body">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-6">
+              <label class="form-label">Tìm kiếm thành viên</label>
 
-        <tbody>
-          <tr th:each="payment, stat : ${payments}">
-            <td th:text="${stat.count}"></td>
+              <input
+                type="text"
+                id="searchInput"
+                class="form-control"
+                placeholder="Nhập tên thành viên..."
+              />
+            </div>
 
-            <td th:text="${payment.user.fullName}"></td>
+            <div class="col-md-3">
+              <label class="form-label">Lọc trạng thái</label>
 
-            <td
-              th:text="${payment.user.gender != null ? payment.user.gender.displayName : '-'}"
-            ></td>
+              <select id="statusFilter" class="form-select">
+                <option value="ALL">Tất cả</option>
+                <option value="PAID">Đã đóng</option>
+                <option value="UNPAID">Chưa đóng</option>
+              </select>
+            </div>
 
-            <td
-              th:text="${#numbers.formatInteger(payment.amount, 0, 'COMMA')} + ' VNĐ'"
-            ></td>
-
-            <td>
-              <span
-                th:if="${payment.status.name() == 'PAID'}"
-                class="badge bg-success"
+            <div class="col-md-3">
+              <button
+                type="button"
+                class="btn btn-secondary w-100"
+                onclick="resetFilter()"
               >
-                Đã đóng
-              </span>
+                Làm mới bộ lọc
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              <span
-                th:if="${payment.status.name() == 'UNPAID'}"
-                class="badge bg-danger"
+      <!-- Bảng danh sách khoản thu -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+          Danh sách thành viên phải đóng
+        </div>
+
+        <div class="card-body">
+          <table class="table table-bordered table-striped align-middle mb-0">
+            <thead class="table-dark">
+              <tr>
+                <th>STT</th>
+                <th>Thành viên</th>
+                <th>Giới tính</th>
+                <th>Số tiền phải đóng</th>
+                <th>Trạng thái</th>
+                <th>Ngày đóng</th>
+                <th>Hình thức</th>
+                <th>Ghi chú</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr
+                th:each="payment, stat : ${payments}"
+                class="payment-row"
+                th:attr="data-name=${payment.user.fullName}, data-status=${payment.status.name()}"
               >
-                Chưa đóng
-              </span>
-            </td>
+                <td th:text="${stat.count}"></td>
 
-            <td
-              th:text="${payment.paidDate != null ? #temporals.format(payment.paidDate, 'dd/MM/yyyy') : '-'}"
-            ></td>
+                <td th:text="${payment.user.fullName}"></td>
 
-            <td
-              th:text="${payment.paymentMethod != null ? payment.paymentMethod : '-'}"
-            ></td>
+                <td
+                  th:text="${payment.user.gender != null ? payment.user.gender.displayName : '-'}"
+                ></td>
 
-            <td
-              th:text="${payment.note != null && !payment.note.isEmpty() ? payment.note : '-'}"
-            ></td>
+                <td
+                  class="fw-bold"
+                  th:text="${#numbers.formatInteger(payment.amount, 0, 'COMMA')} + ' VNĐ'"
+                ></td>
 
-            <td>
-              <a
-                th:href="@{/payments/edit/{id}(id=${payment.id})}"
-                class="btn btn-warning btn-sm mb-1"
-              >
-                Sửa
-              </a>
+                <td>
+                  <span
+                    th:if="${payment.status.name() == 'PAID'}"
+                    class="badge bg-success"
+                  >
+                    Đã đóng
+                  </span>
 
-              <form
-                th:if="${payment.status.name() == 'UNPAID'}"
-                th:action="@{/payments/paid/{id}(id=${payment.id})}"
-                method="post"
-                class="d-inline"
-              >
-                <select
-                  name="paymentMethod"
-                  class="form-select form-select-sm d-inline w-auto"
-                >
-                  <option value="Tiền mặt">Tiền mặt</option>
-                  <option value="Chuyển khoản">Chuyển khoản</option>
-                </select>
+                  <span
+                    th:if="${payment.status.name() == 'UNPAID'}"
+                    class="badge bg-danger"
+                  >
+                    Chưa đóng
+                  </span>
+                </td>
 
-                <button type="submit" class="btn btn-success btn-sm">
-                  Xác nhận đã thu
-                </button>
-              </form>
+                <td
+                  th:text="${payment.paidDate != null ? #temporals.format(payment.paidDate, 'dd/MM/yyyy') : '-'}"
+                ></td>
 
-              <form
-                th:if="${payment.status.name() == 'PAID'}"
-                th:action="@{/payments/unpaid/{id}(id=${payment.id})}"
-                method="post"
-                class="d-inline"
-              >
-                <button type="submit" class="btn btn-secondary btn-sm">
-                  Hoàn tác
-                </button>
-              </form>
-            </td>
-          </tr>
+                <td
+                  th:text="${payment.paymentMethod != null ? payment.paymentMethod : '-'}"
+                ></td>
 
-          <tr th:if="${#lists.isEmpty(payments)}">
-            <td colspan="9" class="text-center text-muted">
-              Chưa có khoản thu nào trong đợt này.
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                <td
+                  th:text="${payment.note != null && !payment.note.isEmpty() ? payment.note : '-'}"
+                ></td>
+
+                <td style="min-width: 230px">
+                  <a
+                    th:href="@{/payments/edit/{id}(id=${payment.id})}"
+                    class="btn btn-warning btn-sm mb-1"
+                  >
+                    Sửa
+                  </a>
+
+                  <form
+                    th:if="${payment.status.name() == 'UNPAID'}"
+                    th:action="@{/payments/paid/{id}(id=${payment.id})}"
+                    method="post"
+                    class="d-inline"
+                  >
+                    <select
+                      name="paymentMethod"
+                      class="form-select form-select-sm d-inline w-auto mb-1"
+                    >
+                      <option value="Tiền mặt">Tiền mặt</option>
+                      <option value="Chuyển khoản">Chuyển khoản</option>
+                    </select>
+
+                    <button type="submit" class="btn btn-success btn-sm mb-1">
+                      Xác nhận đã thu
+                    </button>
+                  </form>
+
+                  <form
+                    th:if="${payment.status.name() == 'PAID'}"
+                    th:action="@{/payments/unpaid/{id}(id=${payment.id})}"
+                    method="post"
+                    class="d-inline"
+                  >
+                    <button type="submit" class="btn btn-secondary btn-sm mb-1">
+                      Hoàn tác
+                    </button>
+                  </form>
+                </td>
+              </tr>
+
+              <tr th:if="${#lists.isEmpty(payments)}">
+                <td colspan="9" class="text-center text-muted">
+                  Chưa có khoản thu nào trong đợt này.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div id="noResultMessage" class="text-center text-muted mt-3 d-none">
+            Không tìm thấy thành viên phù hợp với bộ lọc.
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      const searchInput = document.getElementById("searchInput");
+      const statusFilter = document.getElementById("statusFilter");
+      const noResultMessage = document.getElementById("noResultMessage");
+
+      function filterPayments() {
+        const keyword = searchInput.value.toLowerCase().trim();
+        const status = statusFilter.value;
+
+        const rows = document.querySelectorAll(".payment-row");
+        let visibleCount = 0;
+
+        rows.forEach(function (row) {
+          const name = row.getAttribute("data-name").toLowerCase();
+          const rowStatus = row.getAttribute("data-status");
+
+          const matchName = name.includes(keyword);
+          const matchStatus = status === "ALL" || rowStatus === status;
+
+          if (matchName && matchStatus) {
+            row.style.display = "";
+            visibleCount++;
+          } else {
+            row.style.display = "none";
+          }
+        });
+
+        if (visibleCount === 0 && rows.length > 0) {
+          noResultMessage.classList.remove("d-none");
+        } else {
+          noResultMessage.classList.add("d-none");
+        }
+      }
+
+      function resetFilter() {
+        searchInput.value = "";
+        statusFilter.value = "ALL";
+        filterPayments();
+      }
+
+      searchInput.addEventListener("input", filterPayments);
+      statusFilter.addEventListener("change", filterPayments);
+    </script>
   </body>
 </html>
