@@ -26,4 +26,8 @@ public class PaymentBatch {
 
     @Column(length = 500)
     private String note;
+
+    // MONTHLY: Quỹ tháng
+    // EVENT: Khoản thu phát sinh
+    private String batchType;
 }

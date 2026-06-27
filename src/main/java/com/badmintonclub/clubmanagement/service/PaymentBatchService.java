@@ -25,4 +25,12 @@ public class PaymentBatchService {
     public PaymentBatch saveBatch(PaymentBatch batch) {
         return paymentBatchRepository.save(batch);
     }
+
+    public boolean existsByTitleAndMonth(String title, String month) {
+        return paymentBatchRepository.existsByTitleAndMonth(title, month);
+    }
+
+    public boolean existsMonthlyBatchByMonth(String month) {
+        return paymentBatchRepository.existsByBatchTypeAndMonth("MONTHLY", month);
+    }
 }

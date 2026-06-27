@@ -58,7 +58,16 @@ public class PaymentController {
 
     @PostMapping("/payments/create-monthly")
     public String createMonthlyPayment(
-            @ModelAttribute PaymentBatch batch) {
+            @ModelAttribute PaymentBatch batch,
+            @RequestParam String monthKey) {
+        String month = convertMonthKeyToMonth(monthKey);
+
+        if (paymentBatchService.existsMonthlyBatchByMonth(month)) {
+            return "redirect:/payments/create-monthly?duplicate";
+        }
+
+        batch.setMonth(month);
+        batch.setBatchType("MONTHLY");
 
         PaymentBatch savedBatch = paymentBatchService.saveBatch(batch);
 
@@ -208,20 +217,40 @@ public class PaymentController {
             @RequestParam String applyType,
             @RequestParam(required = false) List<Long> userIds) {
 
+        if (paymentBatchService.existsByTitleAndMonth(
+                batch.getTitle(),
+                batch.getMonth())) {
+            return "redirect:/payments/create-event?duplicate";
+        }
+
+        batch.setBatchType("EVENT");
+
         PaymentBatch savedBatch = paymentBatchService.saveBatch(batch);
 
         if ("ALL".equals(applyType)) {
-            paymentService.createEventPayments(
-                    savedBatch,
-                    amount,
-                    null);
+            paymentService.createEventPayments(savedBatch, amount, null);
         } else {
-            paymentService.createEventPayments(
-                    savedBatch,
-                    amount,
-                    userIds);
+            paymentService.createEventPayments(savedBatch, amount, userIds);
         }
 
         return "redirect:/payments/detail/" + savedBatch.getId();
+    }
+
+    private String convertMonthKeyToMonth(String monthKey) {
+        if (monthKey == null || monthKey.isBlank()) {
+            return "";
+        }
+
+        // input type="month" trả về dạng yyyy-MM, ví dụ: 2026-06
+        String[] parts = monthKey.split("-");
+
+        if (parts.length == 2) {
+            String year = parts[0];
+            String month = parts[1];
+
+            return month + "/" + year;
+        }
+
+        return monthKey;
     }
 }

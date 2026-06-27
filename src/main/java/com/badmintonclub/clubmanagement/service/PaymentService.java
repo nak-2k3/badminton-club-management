@@ -181,4 +181,16 @@ public class PaymentService {
             paymentRepository.save(payment);
         }
     }
+
+    public Long getTotalAmount() {
+        return paymentRepository.sumAllAmount();
+    }
+
+    public Long getPaidAmount() {
+        return paymentRepository.sumAmountByStatus(PaymentStatus.PAID);
+    }
+
+    public Long getUnpaidAmount() {
+        return paymentRepository.sumAmountByStatus(PaymentStatus.UNPAID);
+    }
 }

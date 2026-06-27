@@ -6,7 +6,6 @@ import com.badmintonclub.clubmanagement.entity.enums.PaymentStatus;
 import com.badmintonclub.clubmanagement.service.PaymentService;
 import com.badmintonclub.clubmanagement.service.UserService;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,11 +16,14 @@ import java.util.List;
 @Controller
 public class MyPaymentController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    @Autowired
-    private PaymentService paymentService;
+    private final PaymentService paymentService;
+
+    MyPaymentController(UserService userService, PaymentService paymentService) {
+        this.userService = userService;
+        this.paymentService = paymentService;
+    }
 
     @GetMapping("/my-payments")
     public String myPayments(Model model, Principal principal) {

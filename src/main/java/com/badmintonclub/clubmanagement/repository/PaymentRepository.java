@@ -30,4 +30,10 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Long sumAmountByBatchAndStatus(
             @Param("batch") PaymentBatch batch,
             @Param("status") PaymentStatus status);
+
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p")
+    Long sumAllAmount();
+
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.status = :status")
+    Long sumAmountByStatus(@Param("status") PaymentStatus status);
 }
