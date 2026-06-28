@@ -222,4 +222,63 @@ public class PaymentService {
                 month,
                 PaymentStatus.UNPAID);
     }
+
+    // chi tiết thu
+    public List<Payment> getPaymentsByMonth(String month) {
+        return paymentRepository.findPaymentsByMonth(month);
+    }
+
+    // them thanh vien vao khoan thu va xoa
+    public List<Long> getUserIdsByBatch(PaymentBatch batch) {
+        return paymentRepository.findUserIdsByBatch(batch);
+    }
+
+    public void addUsersToEventPayment(
+            PaymentBatch batch,
+            Integer amount,
+            List<Long> userIds) {
+        if (batch == null || userIds == null || userIds.isEmpty()) {
+            return;
+        }
+
+        List<User> users = userRepository.findAllById(userIds);
+
+        for (User user : users) {
+            if (!user.isEnabled()) {
+                continue;
+            }
+
+            if (paymentRepository.existsByBatchAndUser(batch, user)) {
+                continue;
+            }
+
+            Payment payment = new Payment();
+
+            payment.setBatch(batch);
+            payment.setUser(user);
+            payment.setAmount(amount);
+            payment.setStatus(PaymentStatus.UNPAID);
+            payment.setPaidDate(null);
+            payment.setPaymentMethod(null);
+            payment.setNote(batch.getNote());
+
+            paymentRepository.save(payment);
+        }
+    }
+
+    public void deletePayment(Long id) {
+        paymentRepository.deleteById(id);
+    }
+
+    public boolean canRemovePaymentFromEvent(Payment payment) {
+        if (payment == null || payment.getBatch() == null) {
+            return false;
+        }
+
+        boolean isEventPayment = "EVENT".equals(payment.getBatch().getBatchType());
+        boolean isUnpaid = payment.getStatus() == PaymentStatus.UNPAID;
+
+        return isEventPayment && isUnpaid;
+    }
+
 }

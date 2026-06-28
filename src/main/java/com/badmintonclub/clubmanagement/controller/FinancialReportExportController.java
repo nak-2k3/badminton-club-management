@@ -1,6 +1,7 @@
 package com.badmintonclub.clubmanagement.controller;
 
 import com.badmintonclub.clubmanagement.entity.Expense;
+import com.badmintonclub.clubmanagement.entity.Payment;
 import com.badmintonclub.clubmanagement.entity.PaymentBatch;
 import com.badmintonclub.clubmanagement.service.ExpenseService;
 import com.badmintonclub.clubmanagement.service.PaymentBatchService;
@@ -30,227 +31,301 @@ import java.util.List;
 @Controller
 public class FinancialReportExportController {
 
-    @Autowired
-    private PaymentService paymentService;
+        @Autowired
+        private PaymentService paymentService;
 
-    @Autowired
-    private PaymentBatchService paymentBatchService;
+        @Autowired
+        private PaymentBatchService paymentBatchService;
 
-    @Autowired
-    private ExpenseService expenseService;
+        @Autowired
+        private ExpenseService expenseService;
 
-    @GetMapping("/reports/finance/export")
-    public void exportFinanceReport(
-            @RequestParam String monthKey,
-            HttpServletResponse response) throws IOException {
+        @GetMapping("/reports/finance/export")
+        public void exportFinanceReport(
+                        @RequestParam String monthKey,
+                        HttpServletResponse response) throws IOException {
 
-        YearMonth selectedMonth = YearMonth.parse(monthKey);
+                YearMonth selectedMonth = YearMonth.parse(monthKey);
 
-        String month = selectedMonth.format(
-                DateTimeFormatter.ofPattern("MM/yyyy"));
+                String month = selectedMonth.format(
+                                DateTimeFormatter.ofPattern("MM/yyyy"));
 
-        LocalDate startDate = selectedMonth.atDay(1);
-        LocalDate endDate = selectedMonth.atEndOfMonth();
+                LocalDate startDate = selectedMonth.atDay(1);
+                LocalDate endDate = selectedMonth.atEndOfMonth();
 
-        Long totalAmount = paymentService.getTotalAmountByMonth(month);
-        Long paidAmount = paymentService.getPaidAmountByMonth(month);
-        Long unpaidAmount = paymentService.getUnpaidAmountByMonth(month);
-        Long expenseAmount = expenseService.getTotalExpenseAmountBetween(
-                startDate,
-                endDate);
+                Long totalAmount = paymentService.getTotalAmountByMonth(month);
+                Long paidAmount = paymentService.getPaidAmountByMonth(month);
+                Long unpaidAmount = paymentService.getUnpaidAmountByMonth(month);
 
-        Long balance = safeLong(paidAmount) - safeLong(expenseAmount);
+                Long expenseAmount = expenseService.getTotalExpenseAmountBetween(
+                                startDate,
+                                endDate);
 
-        List<PaymentBatch> batches = paymentBatchService.getBatchesByMonth(month);
-        List<Expense> expenses = expenseService.getExpensesBetween(startDate, endDate);
+                Long balance = safeLong(paidAmount) - safeLong(expenseAmount);
 
-        Workbook workbook = new XSSFWorkbook();
+                List<PaymentBatch> batches = paymentBatchService.getBatchesByMonth(month);
+                List<Payment> payments = paymentService.getPaymentsByMonth(month);
+                List<Expense> expenses = expenseService.getExpensesBetween(startDate, endDate);
 
-        CellStyle moneyStyle = createMoneyStyle(workbook);
+                Workbook workbook = new XSSFWorkbook();
 
-        Sheet summarySheet = workbook.createSheet("Tong quan");
-        createSummarySheet(
-                summarySheet,
-                month,
-                totalAmount,
-                paidAmount,
-                unpaidAmount,
-                expenseAmount,
-                balance,
-                moneyStyle);
+                CellStyle moneyStyle = createMoneyStyle(workbook);
 
-        Sheet incomeSheet = workbook.createSheet("Khoan thu");
-        createIncomeSheet(incomeSheet, batches);
+                Sheet summarySheet = workbook.createSheet("Tong quan");
+                createSummarySheet(
+                                summarySheet,
+                                month,
+                                totalAmount,
+                                paidAmount,
+                                unpaidAmount,
+                                expenseAmount,
+                                balance,
+                                moneyStyle);
 
-        Sheet expenseSheet = workbook.createSheet("Khoan chi");
-        createExpenseSheet(
-                expenseSheet,
-                expenses,
-                moneyStyle);
+                Sheet incomeSheet = workbook.createSheet("Khoan thu");
+                createIncomeSheet(incomeSheet, batches);
 
-        response.setContentType(
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+                Sheet incomeDetailSheet = workbook.createSheet("Chi tiet thu");
+                createIncomeDetailSheet(
+                                incomeDetailSheet,
+                                payments,
+                                moneyStyle);
 
-        response.setHeader(
-                "Content-Disposition",
-                "attachment; filename=bao-cao-thu-chi-" + monthKey + ".xlsx");
+                Sheet expenseSheet = workbook.createSheet("Khoan chi");
+                createExpenseSheet(
+                                expenseSheet,
+                                expenses,
+                                moneyStyle);
 
-        workbook.write(response.getOutputStream());
-        workbook.close();
-    }
+                response.setContentType(
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
-    private void createSummarySheet(
-            Sheet sheet,
-            String month,
-            Long totalAmount,
-            Long paidAmount,
-            Long unpaidAmount,
-            Long expenseAmount,
-            Long balance,
-            CellStyle moneyStyle) {
-        Row titleRow = sheet.createRow(0);
-        titleRow.createCell(0).setCellValue("Báo cáo thu chi tháng " + month);
+                response.setHeader(
+                                "Content-Disposition",
+                                "attachment; filename=bao-cao-thu-chi-" + monthKey + ".xlsx");
 
-        Row row1 = sheet.createRow(2);
-        row1.createCell(0).setCellValue("Tổng phải thu");
-        setMoneyCell(row1, 1, totalAmount, moneyStyle);
-
-        Row row2 = sheet.createRow(3);
-        row2.createCell(0).setCellValue("Đã thu");
-        setMoneyCell(row2, 1, paidAmount, moneyStyle);
-
-        Row row3 = sheet.createRow(4);
-        row3.createCell(0).setCellValue("Chưa thu");
-        setMoneyCell(row3, 1, unpaidAmount, moneyStyle);
-
-        Row row4 = sheet.createRow(5);
-        row4.createCell(0).setCellValue("Đã chi");
-        setMoneyCell(row4, 1, expenseAmount, moneyStyle);
-
-        Row row5 = sheet.createRow(6);
-        row5.createCell(0).setCellValue("Quỹ còn lại trong tháng");
-        setMoneyCell(row5, 1, balance, moneyStyle);
-
-        sheet.autoSizeColumn(0);
-        sheet.autoSizeColumn(1);
-    }
-
-    private void createIncomeSheet(
-            Sheet sheet,
-            List<PaymentBatch> batches) {
-        Row header = sheet.createRow(0);
-
-        header.createCell(0).setCellValue("STT");
-        header.createCell(1).setCellValue("Tên khoản thu");
-        header.createCell(2).setCellValue("Tháng");
-        header.createCell(3).setCellValue("Hạn chót");
-        header.createCell(4).setCellValue("Ghi chú");
-
-        int rowIndex = 1;
-        int stt = 1;
-
-        for (PaymentBatch batch : batches) {
-            Row row = sheet.createRow(rowIndex++);
-
-            row.createCell(0).setCellValue(stt++);
-            row.createCell(1).setCellValue(batch.getTitle());
-            row.createCell(2).setCellValue(batch.getMonth());
-
-            row.createCell(3).setCellValue(
-                    batch.getDueDate() != null
-                            ? batch.getDueDate().format(
-                                    DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                            : "-");
-
-            row.createCell(4).setCellValue(
-                    batch.getNote() != null ? batch.getNote() : "-");
+                workbook.write(response.getOutputStream());
+                workbook.close();
         }
 
-        for (int i = 0; i <= 4; i++) {
-            sheet.autoSizeColumn(i);
-        }
-    }
+        private void createSummarySheet(
+                        Sheet sheet,
+                        String month,
+                        Long totalAmount,
+                        Long paidAmount,
+                        Long unpaidAmount,
+                        Long expenseAmount,
+                        Long balance,
+                        CellStyle moneyStyle) {
+                Row titleRow = sheet.createRow(0);
+                titleRow.createCell(0).setCellValue("Báo cáo thu chi tháng " + month);
 
-    private void createExpenseSheet(
-            Sheet sheet,
-            List<Expense> expenses,
-            CellStyle moneyStyle) {
-        Row header = sheet.createRow(0);
+                Row row1 = sheet.createRow(2);
+                row1.createCell(0).setCellValue("Tổng phải thu");
+                setMoneyCell(row1, 1, totalAmount, moneyStyle);
 
-        header.createCell(0).setCellValue("STT");
-        header.createCell(1).setCellValue("Tên khoản chi");
-        header.createCell(2).setCellValue("Số tiền");
-        header.createCell(3).setCellValue("Ngày chi");
-        header.createCell(4).setCellValue("Hình thức");
-        header.createCell(5).setCellValue("Ghi chú");
+                Row row2 = sheet.createRow(3);
+                row2.createCell(0).setCellValue("Đã thu");
+                setMoneyCell(row2, 1, paidAmount, moneyStyle);
 
-        int rowIndex = 1;
-        int stt = 1;
+                Row row3 = sheet.createRow(4);
+                row3.createCell(0).setCellValue("Chưa thu");
+                setMoneyCell(row3, 1, unpaidAmount, moneyStyle);
 
-        for (Expense expense : expenses) {
-            Row row = sheet.createRow(rowIndex++);
+                Row row4 = sheet.createRow(5);
+                row4.createCell(0).setCellValue("Đã chi");
+                setMoneyCell(row4, 1, expenseAmount, moneyStyle);
 
-            row.createCell(0).setCellValue(stt++);
-            row.createCell(1).setCellValue(expense.getTitle());
+                Row row5 = sheet.createRow(6);
+                row5.createCell(0).setCellValue("Quỹ còn lại trong tháng");
+                setMoneyCell(row5, 1, balance, moneyStyle);
 
-            setMoneyCell(row, 2, expense.getAmount(), moneyStyle);
-
-            row.createCell(3).setCellValue(
-                    expense.getExpenseDate() != null
-                            ? expense.getExpenseDate().format(
-                                    DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                            : "-");
-
-            row.createCell(4).setCellValue(
-                    expense.getPaymentMethod() != null
-                            ? expense.getPaymentMethod()
-                            : "-");
-
-            row.createCell(5).setCellValue(
-                    expense.getNote() != null ? expense.getNote() : "-");
+                sheet.autoSizeColumn(0);
+                sheet.autoSizeColumn(1);
         }
 
-        for (int i = 0; i <= 5; i++) {
-            sheet.autoSizeColumn(i);
+        private void createIncomeSheet(
+                        Sheet sheet,
+                        List<PaymentBatch> batches) {
+                Row header = sheet.createRow(0);
+
+                header.createCell(0).setCellValue("STT");
+                header.createCell(1).setCellValue("Tên khoản thu");
+                header.createCell(2).setCellValue("Tháng");
+                header.createCell(3).setCellValue("Hạn chót");
+                header.createCell(4).setCellValue("Ghi chú");
+
+                int rowIndex = 1;
+                int stt = 1;
+
+                for (PaymentBatch batch : batches) {
+                        Row row = sheet.createRow(rowIndex++);
+
+                        row.createCell(0).setCellValue(stt++);
+                        row.createCell(1).setCellValue(batch.getTitle());
+                        row.createCell(2).setCellValue(batch.getMonth());
+
+                        row.createCell(3).setCellValue(
+                                        batch.getDueDate() != null
+                                                        ? batch.getDueDate().format(
+                                                                        DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                                                        : "-");
+
+                        row.createCell(4).setCellValue(
+                                        batch.getNote() != null ? batch.getNote() : "-");
+                }
+
+                for (int i = 0; i <= 4; i++) {
+                        sheet.autoSizeColumn(i);
+                }
         }
-    }
 
-    private CellStyle createMoneyStyle(Workbook workbook) {
-        CellStyle style = workbook.createCellStyle();
+        private void createIncomeDetailSheet(
+                        Sheet sheet,
+                        List<Payment> payments,
+                        CellStyle moneyStyle) {
+                Row header = sheet.createRow(0);
 
-        DataFormat format = workbook.createDataFormat();
+                header.createCell(0).setCellValue("STT");
+                header.createCell(1).setCellValue("Khoản thu");
+                header.createCell(2).setCellValue("Thành viên");
+                header.createCell(3).setCellValue("Giới tính");
+                header.createCell(4).setCellValue("Số tiền");
+                header.createCell(5).setCellValue("Trạng thái");
+                header.createCell(6).setCellValue("Ngày đóng");
+                header.createCell(7).setCellValue("Hình thức");
+                header.createCell(8).setCellValue("Ghi chú");
 
-        style.setDataFormat(
-                format.getFormat("#,##0 \"VNĐ\";[Red]-#,##0 \"VNĐ\""));
+                int rowIndex = 1;
+                int stt = 1;
 
-        return style;
-    }
+                for (Payment payment : payments) {
+                        Row row = sheet.createRow(rowIndex++);
 
-    private void setMoneyCell(
-            Row row,
-            int cellIndex,
-            Long value,
-            CellStyle moneyStyle) {
-        Cell cell = row.createCell(cellIndex);
+                        row.createCell(0).setCellValue(stt++);
 
-        cell.setCellValue(value != null ? value : 0);
+                        row.createCell(1).setCellValue(
+                                        payment.getBatch() != null
+                                                        ? payment.getBatch().getTitle()
+                                                        : "-");
 
-        cell.setCellStyle(moneyStyle);
-    }
+                        row.createCell(2).setCellValue(
+                                        payment.getUser() != null
+                                                        ? payment.getUser().getFullName()
+                                                        : "-");
 
-    private void setMoneyCell(
-            Row row,
-            int cellIndex,
-            Integer value,
-            CellStyle moneyStyle) {
-        Cell cell = row.createCell(cellIndex);
+                        row.createCell(3).setCellValue(
+                                        payment.getUser() != null && payment.getUser().getGender() != null
+                                                        ? payment.getUser().getGender().getDisplayName()
+                                                        : "-");
 
-        cell.setCellValue(value != null ? value : 0);
+                        setMoneyCell(row, 4, payment.getAmount(), moneyStyle);
 
-        cell.setCellStyle(moneyStyle);
-    }
+                        row.createCell(5).setCellValue(
+                                        payment.getStatus() != null
+                                                        ? payment.getStatus().getDisplayName()
+                                                        : "-");
 
-    private Long safeLong(Long value) {
-        return value != null ? value : 0L;
-    }
+                        row.createCell(6).setCellValue(
+                                        payment.getPaidDate() != null
+                                                        ? payment.getPaidDate().format(
+                                                                        DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                                                        : "-");
+
+                        row.createCell(7).setCellValue(
+                                        payment.getPaymentMethod() != null
+                                                        ? payment.getPaymentMethod()
+                                                        : "-");
+
+                        row.createCell(8).setCellValue(
+                                        payment.getNote() != null ? payment.getNote() : "-");
+                }
+
+                for (int i = 0; i <= 8; i++) {
+                        sheet.autoSizeColumn(i);
+                }
+        }
+
+        private void createExpenseSheet(
+                        Sheet sheet,
+                        List<Expense> expenses,
+                        CellStyle moneyStyle) {
+                Row header = sheet.createRow(0);
+
+                header.createCell(0).setCellValue("STT");
+                header.createCell(1).setCellValue("Tên khoản chi");
+                header.createCell(2).setCellValue("Số tiền");
+                header.createCell(3).setCellValue("Ngày chi");
+                header.createCell(4).setCellValue("Hình thức");
+                header.createCell(5).setCellValue("Ghi chú");
+
+                int rowIndex = 1;
+                int stt = 1;
+
+                for (Expense expense : expenses) {
+                        Row row = sheet.createRow(rowIndex++);
+
+                        row.createCell(0).setCellValue(stt++);
+                        row.createCell(1).setCellValue(expense.getTitle());
+
+                        setMoneyCell(row, 2, expense.getAmount(), moneyStyle);
+
+                        row.createCell(3).setCellValue(
+                                        expense.getExpenseDate() != null
+                                                        ? expense.getExpenseDate().format(
+                                                                        DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                                                        : "-");
+
+                        row.createCell(4).setCellValue(
+                                        expense.getPaymentMethod() != null
+                                                        ? expense.getPaymentMethod()
+                                                        : "-");
+
+                        row.createCell(5).setCellValue(
+                                        expense.getNote() != null ? expense.getNote() : "-");
+                }
+
+                for (int i = 0; i <= 5; i++) {
+                        sheet.autoSizeColumn(i);
+                }
+        }
+
+        private CellStyle createMoneyStyle(Workbook workbook) {
+                CellStyle style = workbook.createCellStyle();
+
+                DataFormat format = workbook.createDataFormat();
+
+                style.setDataFormat(
+                                format.getFormat("#,##0 \"VNĐ\";[Red]-#,##0 \"VNĐ\""));
+
+                return style;
+        }
+
+        private void setMoneyCell(
+                        Row row,
+                        int cellIndex,
+                        Long value,
+                        CellStyle moneyStyle) {
+                Cell cell = row.createCell(cellIndex);
+
+                cell.setCellValue(value != null ? value : 0);
+
+                cell.setCellStyle(moneyStyle);
+        }
+
+        private void setMoneyCell(
+                        Row row,
+                        int cellIndex,
+                        Integer value,
+                        CellStyle moneyStyle) {
+                Cell cell = row.createCell(cellIndex);
+
+                cell.setCellValue(value != null ? value : 0);
+
+                cell.setCellStyle(moneyStyle);
+        }
+
+        private Long safeLong(Long value) {
+                return value != null ? value : 0L;
+        }
 }

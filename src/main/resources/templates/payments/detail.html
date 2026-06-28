@@ -19,8 +19,16 @@
           <h2 th:text="${batch.title}"></h2>
 
           <div class="text-muted">
-            Tháng:
+            Loại khoản thu:
+            <span
+              class="badge"
+              th:classappend="${batch.batchType == 'EVENT'} ? 'bg-info' : 'bg-primary'"
+              th:text="${batch.batchType == 'EVENT'} ? 'Khoản thu phát sinh' : 'Quỹ tháng'"
+            ></span>
+
+            | Tháng:
             <span th:text="${batch.month != null ? batch.month : '-'}"></span>
+
             | Hạn chót:
             <span
               th:text="${batch.dueDate != null ? #temporals.format(batch.dueDate, 'dd/MM/yyyy') : '-'}"
@@ -28,7 +36,22 @@
           </div>
         </div>
 
-        <a th:href="@{/payments}" class="btn btn-secondary"> Quay lại </a>
+        <div class="d-flex gap-2">
+          <a
+            th:if="${batch.batchType == 'EVENT'}"
+            th:href="@{/payments/detail/{id}/add-members(id=${batch.id})}"
+            class="btn btn-success"
+          >
+            Thêm thành viên
+          </a>
+
+          <a th:href="@{/payments}" class="btn btn-secondary">Quay lại</a>
+        </div>
+      </div>
+
+      <div th:if="${param.cannotRemove}" class="alert alert-danger">
+        Không thể xóa thành viên này khỏi khoản thu. Chỉ được xóa khỏi khoản thu
+        phát sinh khi thành viên chưa đóng tiền.
       </div>
 
       <!-- Thống kê tổng quan -->
@@ -195,7 +218,7 @@
                   th:text="${payment.note != null && !payment.note.isEmpty() ? payment.note : '-'}"
                 ></td>
 
-                <td style="min-width: 230px">
+                <td style="min-width: 360px">
                   <a
                     th:href="@{/payments/edit/{id}(id=${payment.id})}"
                     class="btn btn-warning btn-sm mb-1"
@@ -230,6 +253,25 @@
                   >
                     <button type="submit" class="btn btn-secondary btn-sm mb-1">
                       Hoàn tác
+                    </button>
+                  </form>
+
+                  <form
+                    th:if="${batch.batchType == 'EVENT' && payment.status.name() == 'UNPAID'}"
+                    th:action="@{/payments/remove/{id}(id=${payment.id})}"
+                    method="post"
+                    class="d-inline"
+                  >
+                    <button
+                      type="submit"
+                      class="btn btn-outline-danger btn-sm mb-1"
+                      onclick="
+                        return confirm(
+                          'Bạn có chắc muốn xóa thành viên này khỏi khoản thu không?',
+                        );
+                      "
+                    >
+                      Xóa khỏi khoản thu
                     </button>
                   </form>
                 </td>

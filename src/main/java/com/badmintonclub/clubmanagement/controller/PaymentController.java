@@ -3,6 +3,7 @@ package com.badmintonclub.clubmanagement.controller;
 import com.badmintonclub.clubmanagement.entity.FeeSetting;
 import com.badmintonclub.clubmanagement.entity.Payment;
 import com.badmintonclub.clubmanagement.entity.PaymentBatch;
+import com.badmintonclub.clubmanagement.entity.User;
 import com.badmintonclub.clubmanagement.entity.enums.PaymentStatus;
 import com.badmintonclub.clubmanagement.service.FeeSettingService;
 import com.badmintonclub.clubmanagement.service.PaymentBatchService;
@@ -213,16 +214,24 @@ public class PaymentController {
     @PostMapping("/payments/create-event")
     public String createEventPayment(
             @ModelAttribute PaymentBatch batch,
+            @RequestParam String monthKey,
             @RequestParam Integer amount,
             @RequestParam String applyType,
             @RequestParam(required = false) List<Long> userIds) {
 
+        String month = convertMonthKeyToMonth(monthKey);
+
         if (paymentBatchService.existsByTitleAndMonth(
                 batch.getTitle(),
-                batch.getMonth())) {
+                month)) {
             return "redirect:/payments/create-event?duplicate";
         }
 
+        if ("SELECTED".equals(applyType) && (userIds == null || userIds.isEmpty())) {
+            return "redirect:/payments/create-event?noUser";
+        }
+
+        batch.setMonth(month);
         batch.setBatchType("EVENT");
 
         PaymentBatch savedBatch = paymentBatchService.saveBatch(batch);
@@ -236,12 +245,87 @@ public class PaymentController {
         return "redirect:/payments/detail/" + savedBatch.getId();
     }
 
+    @GetMapping("/payments/detail/{id}/add-members")
+    public String showAddMembersToEventForm(
+            @PathVariable Long id,
+            Model model) {
+
+        PaymentBatch batch = paymentBatchService.getBatchById(id);
+
+        if (batch == null) {
+            return "redirect:/payments";
+        }
+
+        if (!"EVENT".equals(batch.getBatchType())) {
+            return "redirect:/payments/detail/" + id;
+        }
+
+        List<Long> existingUserIds = paymentService.getUserIdsByBatch(batch);
+
+        List<User> availableUsers = userService.getActiveUsers()
+                .stream()
+                .filter(user -> !existingUserIds.contains(user.getId()))
+                .toList();
+
+        model.addAttribute("batch", batch);
+        model.addAttribute("users", availableUsers);
+
+        return "payments/add-members";
+    }
+
+    @PostMapping("/payments/detail/{id}/add-members")
+    public String addMembersToEventPayment(
+            @PathVariable Long id,
+            @RequestParam Integer amount,
+            @RequestParam(required = false) List<Long> userIds) {
+
+        PaymentBatch batch = paymentBatchService.getBatchById(id);
+
+        if (batch == null) {
+            return "redirect:/payments";
+        }
+
+        if (!"EVENT".equals(batch.getBatchType())) {
+            return "redirect:/payments/detail/" + id;
+        }
+
+        if (userIds == null || userIds.isEmpty()) {
+            return "redirect:/payments/detail/" + id + "/add-members?noUser";
+        }
+
+        paymentService.addUsersToEventPayment(batch, amount, userIds);
+
+        return "redirect:/payments/detail/" + id;
+    }
+
+    @PostMapping("/payments/remove/{id}")
+    public String removePaymentFromEvent(
+            @PathVariable Long id) {
+
+        Payment payment = paymentService.getPaymentById(id);
+
+        if (payment == null || payment.getBatch() == null) {
+            return "redirect:/payments";
+        }
+
+        Long batchId = payment.getBatch().getId();
+
+        if (!paymentService.canRemovePaymentFromEvent(payment)) {
+            return "redirect:/payments/detail/" + batchId + "?cannotRemove";
+        }
+
+        paymentService.deletePayment(id);
+
+        return "redirect:/payments/detail/" + batchId;
+    }
+
     private String convertMonthKeyToMonth(String monthKey) {
         if (monthKey == null || monthKey.isBlank()) {
             return "";
         }
 
-        // input type="month" trả về dạng yyyy-MM, ví dụ: 2026-06
+        // input type="month" hoặc Flatpickr monthSelect trả về dạng yyyy-MM
+        // ví dụ: 2026-06
         String[] parts = monthKey.split("-");
 
         if (parts.length == 2) {
