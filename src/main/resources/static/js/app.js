@@ -6,12 +6,14 @@ function getMainContent() {
   return document.getElementById("main-content");
 }
 
-function scrollMainToTop() {
+function scrollToTop() {
   const mainContent = getMainContent();
 
   if (mainContent) {
     mainContent.scrollTop = 0;
   }
+
+  window.scrollTo(0, 0);
 }
 
 function setActiveNavbar() {
@@ -56,37 +58,107 @@ function closeNavbarMenu() {
   }
 }
 
+function updateAttendanceBadge(form) {
+  const row = form.closest("tr");
+  if (!row) return;
+
+  const statusInput = form.querySelector("input[name='attendanceStatus']");
+  if (!statusInput) return;
+
+  const status = statusInput.value;
+  const badge = row.querySelector(".attendance-badge");
+  if (!badge) return;
+
+  badge.classList.remove("bg-success", "bg-danger", "bg-secondary");
+
+  if (status === "PRESENT") {
+    badge.classList.add("bg-success");
+    badge.textContent = "Có mặt";
+    return;
+  }
+
+  if (status === "ABSENT") {
+    badge.classList.add("bg-danger");
+    badge.textContent = "Vắng";
+    return;
+  }
+
+  badge.classList.add("bg-secondary");
+  badge.textContent = "Chưa điểm danh";
+}
+
+async function submitAttendanceForm(form) {
+  const submitButton = form.querySelector("button[type='submit']");
+  const originalText = submitButton ? submitButton.textContent : "";
+
+  try {
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "...";
+    }
+
+    const response = await fetch(form.action, {
+      method: "POST",
+      body: new FormData(form),
+      credentials: "same-origin",
+      redirect: "follow",
+      headers: {
+        "X-Requested-With": "fetch",
+      },
+    });
+
+    if (!response.ok) {
+      alert("Không thể cập nhật điểm danh. Vui lòng thử lại.");
+      return;
+    }
+
+    updateAttendanceBadge(form);
+  } catch (error) {
+    alert("Có lỗi xảy ra khi cập nhật điểm danh.");
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.textContent = originalText;
+    }
+  }
+}
+
+function initAttendanceForms() {
+  document.querySelectorAll(".attendance-form").forEach((form) => {
+    if (form.dataset.attendanceBound === "true") return;
+
+    form.dataset.attendanceBound = "true";
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      submitAttendanceForm(form);
+    });
+  });
+}
+
 function initAppUI() {
   setActiveNavbar();
+  initAttendanceForms();
 }
 
 document.addEventListener("DOMContentLoaded", function () {
   initAppUI();
-  scrollMainToTop();
 });
 
 document.body.addEventListener("htmx:beforeRequest", function () {
   closeNavbarMenu();
 });
 
-document.body.addEventListener("htmx:beforeSwap", function (event) {
-  if (event.detail.target && event.detail.target.id === "main-content") {
-    event.detail.target.classList.add("is-page-loading");
-    scrollMainToTop();
-  }
-});
-
 document.body.addEventListener("htmx:afterSwap", function (event) {
   initAppUI();
 
   if (event.detail.target && event.detail.target.id === "main-content") {
-    scrollMainToTop();
+    scrollToTop();
   }
 });
 
 document.body.addEventListener("htmx:afterSettle", function (event) {
   if (event.detail.target && event.detail.target.id === "main-content") {
-    scrollMainToTop();
-    event.detail.target.classList.remove("is-page-loading");
+    scrollToTop();
   }
 });

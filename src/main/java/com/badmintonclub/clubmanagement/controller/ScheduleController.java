@@ -2,20 +2,23 @@ package com.badmintonclub.clubmanagement.controller;
 
 import com.badmintonclub.clubmanagement.entity.Schedule;
 import com.badmintonclub.clubmanagement.entity.User;
+import com.badmintonclub.clubmanagement.entity.enums.AttendanceStatus;
+import com.badmintonclub.clubmanagement.service.GuestPaymentService;
 import com.badmintonclub.clubmanagement.service.RegistrationService;
 import com.badmintonclub.clubmanagement.service.ScheduleService;
 import com.badmintonclub.clubmanagement.service.UserService;
-import com.badmintonclub.clubmanagement.entity.enums.AttendanceStatus;
-import com.badmintonclub.clubmanagement.service.GuestPaymentService;
 
 import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
@@ -96,9 +99,7 @@ public class ScheduleController {
 
         @GetMapping("/schedules/create")
         public String showCreateForm(Model model) {
-
                 model.addAttribute("schedule", new Schedule());
-
                 return "schedules/create";
         }
 
@@ -162,7 +163,6 @@ public class ScheduleController {
                 }
 
                 var registrations = registrationService.getRegistrationsBySchedule(schedule);
-
                 var guestPayments = guestPaymentService.getGuestPaymentsBySchedule(schedule);
 
                 int memberCount = registrations.size();
@@ -198,25 +198,19 @@ public class ScheduleController {
 
         @GetMapping("/schedules/cancel/{id}")
         public String cancelSchedule(@PathVariable Long id) {
-
                 scheduleService.cancelSchedule(id);
-
                 return "redirect:/schedules";
         }
 
         @GetMapping("/schedules/lock/{id}")
         public String lockSchedule(@PathVariable Long id) {
-
                 scheduleService.lockSchedule(id);
-
                 return "redirect:/schedules";
         }
 
         @GetMapping("/schedules/open/{id}")
         public String openSchedule(@PathVariable Long id) {
-
                 scheduleService.openSchedule(id);
-
                 return "redirect:/schedules";
         }
 
@@ -237,26 +231,39 @@ public class ScheduleController {
                 return "redirect:/schedules";
         }
 
-        // điểm danh
         @PostMapping("/schedules/registrations/{id}/attendance")
-        public String markRegistrationAttendance(
+        public ResponseEntity<Void> markRegistrationAttendance(
                         @PathVariable Long id,
                         @RequestParam AttendanceStatus attendanceStatus,
-                        @RequestParam Long scheduleId) {
-
+                        @RequestParam Long scheduleId,
+                        @RequestHeader(value = "X-Requested-With", required = false) String requestedWith) {
                 registrationService.markAttendance(id, attendanceStatus);
 
-                return "redirect:/schedules/participants/" + scheduleId;
+                if ("fetch".equals(requestedWith)) {
+                        return ResponseEntity.ok().build();
+                }
+
+                return ResponseEntity
+                                .status(HttpStatus.SEE_OTHER)
+                                .location(URI.create("/schedules/participants/" + scheduleId))
+                                .build();
         }
 
         @PostMapping("/schedules/guest-payments/{id}/attendance")
-        public String markGuestAttendance(
+        public ResponseEntity<Void> markGuestAttendance(
                         @PathVariable Long id,
                         @RequestParam AttendanceStatus attendanceStatus,
-                        @RequestParam Long scheduleId) {
-
+                        @RequestParam Long scheduleId,
+                        @RequestHeader(value = "X-Requested-With", required = false) String requestedWith) {
                 guestPaymentService.markAttendance(id, attendanceStatus);
 
-                return "redirect:/schedules/participants/" + scheduleId;
+                if ("fetch".equals(requestedWith)) {
+                        return ResponseEntity.ok().build();
+                }
+
+                return ResponseEntity
+                                .status(HttpStatus.SEE_OTHER)
+                                .location(URI.create("/schedules/participants/" + scheduleId))
+                                .build();
         }
 }
