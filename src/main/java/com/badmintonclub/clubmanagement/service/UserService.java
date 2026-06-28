@@ -1,23 +1,43 @@
 package com.badmintonclub.clubmanagement.service;
 
 import com.badmintonclub.clubmanagement.entity.User;
+import com.badmintonclub.clubmanagement.entity.enums.Level;
+import com.badmintonclub.clubmanagement.entity.enums.Role;
 import com.badmintonclub.clubmanagement.repository.UserRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
 public class UserService {
+
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
     @Autowired
     private UserRepository userRepository;
 
-    // Lấy danh sách user
     public List<User> getAllUsers() {
         return userRepository.findAll();
+    }
+
+    public Page<User> searchUsers(
+            String keyword,
+            Role role,
+            Level level,
+            Boolean enabled,
+            Pageable pageable) {
+        return userRepository.searchUsers(
+                keyword,
+                role,
+                level,
+                enabled,
+                pageable);
     }
 
     public long countUsers() {
@@ -32,7 +52,6 @@ public class UserService {
         return userRepository.countByEnabledFalse();
     }
 
-    // Lưu user
     public User saveUser(User user, String newPassword) {
 
         if (user.getId() != null) {
@@ -52,13 +71,13 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    // Tìm user theo id
     public User getUserById(Long id) {
         return userRepository.findById(id).orElse(null);
     }
 
     public void lockUser(Long id) {
         User user = getUserById(id);
+
         if (user != null) {
             user.setEnabled(false);
             userRepository.save(user);
@@ -67,6 +86,7 @@ public class UserService {
 
     public void unlockUser(Long id) {
         User user = getUserById(id);
+
         if (user != null) {
             user.setEnabled(true);
             userRepository.save(user);

@@ -1,5 +1,6 @@
 package com.badmintonclub.clubmanagement.controller;
 
+import com.badmintonclub.clubmanagement.entity.Schedule;
 import com.badmintonclub.clubmanagement.service.ExpenseService;
 import com.badmintonclub.clubmanagement.service.GuestPaymentService;
 import com.badmintonclub.clubmanagement.service.PaymentService;
@@ -11,6 +12,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
+import java.util.List;
 
 @Controller
 public class DashboardController {
@@ -36,51 +44,104 @@ public class DashboardController {
         @GetMapping("/dashboard")
         public String dashboard(Model model) {
 
-                // Tổng quan CLB
+                LocalDate today = LocalDate.now();
+
+                LocalDateTime startOfToday = today.atStartOfDay();
+                LocalDateTime endOfToday = today.plusDays(1).atStartOfDay();
+
+                YearMonth currentMonth = YearMonth.now();
+
+                LocalDate startOfMonth = currentMonth.atDay(1);
+                LocalDate endOfMonth = currentMonth.atEndOfMonth();
+
+                LocalDateTime startOfMonthTime = startOfMonth.atStartOfDay();
+                LocalDateTime endOfMonthTime = endOfMonth.plusDays(1).atStartOfDay();
+
+                String month = currentMonth.format(DateTimeFormatter.ofPattern("MM/yyyy"));
+
+                List<Schedule> todaySchedules = scheduleService.getAllSchedules()
+                                .stream()
+                                .filter(schedule -> schedule.getPlayTime() != null)
+                                .filter(schedule -> !schedule.getPlayTime().isBefore(startOfToday))
+                                .filter(schedule -> schedule.getPlayTime().isBefore(endOfToday))
+                                .sorted(Comparator.comparing(Schedule::getPlayTime))
+                                .toList();
+
+                List<Schedule> upcomingSchedules = scheduleService.getAllSchedules()
+                                .stream()
+                                .filter(schedule -> schedule.getPlayTime() != null)
+                                .filter(schedule -> schedule.getPlayTime().isAfter(LocalDateTime.now()))
+                                .sorted(Comparator.comparing(Schedule::getPlayTime))
+                                .limit(5)
+                                .toList();
+
+                for (Schedule schedule : todaySchedules) {
+                        schedule.setCurrentPlayers(registrationService.countParticipants(schedule));
+                }
+
+                for (Schedule schedule : upcomingSchedules) {
+                        schedule.setCurrentPlayers(registrationService.countParticipants(schedule));
+                }
+
+                Long allMemberPaidAmount = safeLong(paymentService.getPaidAmount());
+                Long allGuestPaidAmount = safeLong(guestPaymentService.getPaidGuestAmount());
+                Long allExpenseAmount = safeLong(expenseService.getTotalExpenseAmount());
+
+                Long currentFund = allMemberPaidAmount + allGuestPaidAmount - allExpenseAmount;
+
+                Long monthMemberPaidAmount = safeLong(paymentService.getPaidAmountByMonth(month));
+                Long monthMemberUnpaidAmount = safeLong(paymentService.getUnpaidAmountByMonth(month));
+
+                Long monthGuestPaidAmount = safeLong(
+                                guestPaymentService.getPaidGuestAmountBetween(
+                                                startOfMonthTime,
+                                                endOfMonthTime));
+
+                Long monthGuestUnpaidAmount = safeLong(
+                                guestPaymentService.getUnpaidGuestAmountBetween(
+                                                startOfMonthTime,
+                                                endOfMonthTime));
+
+                Long monthPaidAmount = monthMemberPaidAmount + monthGuestPaidAmount;
+                Long monthUnpaidAmount = monthMemberUnpaidAmount + monthGuestUnpaidAmount;
+
+                Long monthExpenseAmount = safeLong(
+                                expenseService.getTotalExpenseAmountBetween(
+                                                startOfMonth,
+                                                endOfMonth));
+
+                Long monthBalance = monthPaidAmount - monthExpenseAmount;
+
+                var todayGuestPayments = guestPaymentService.getGuestPaymentsBetween(
+                                startOfToday,
+                                endOfToday);
+
                 model.addAttribute("totalUsers", userService.countUsers());
-                model.addAttribute("totalSchedules", scheduleService.countSchedules());
                 model.addAttribute("activeUsers", userService.countActiveUsers());
                 model.addAttribute("lockedUsers", userService.countLockedUsers());
-                model.addAttribute("totalRegistrations", registrationService.countRegistrations());
-                model.addAttribute("latestSchedules", scheduleService.getLatestSchedules());
 
-                // Tiền thu từ thành viên chính thức
-                Long memberTotalAmount = safeLong(paymentService.getTotalAmount());
-                Long memberPaidAmount = safeLong(paymentService.getPaidAmount());
-                Long memberUnpaidAmount = safeLong(paymentService.getUnpaidAmount());
+                model.addAttribute("todaySchedules", todaySchedules);
+                model.addAttribute("todaySchedulesCount", todaySchedules.size());
 
-                // Tiền thu từ khách vãng lai
-                Long guestTotalAmount = safeLong(guestPaymentService.getTotalGuestAmount());
-                Long guestPaidAmount = safeLong(guestPaymentService.getPaidGuestAmount());
-                Long guestUnpaidAmount = safeLong(guestPaymentService.getUnpaidGuestAmount());
+                model.addAttribute("upcomingSchedules", upcomingSchedules);
 
-                // Tổng tiền thu = tiền thành viên + tiền khách vãng lai
-                Long totalIncomeAmount = memberTotalAmount + guestTotalAmount;
-                Long paidIncomeAmount = memberPaidAmount + guestPaidAmount;
-                Long unpaidIncomeAmount = memberUnpaidAmount + guestUnpaidAmount;
-
-                // Tổng chi
-                Long expenseAmount = safeLong(expenseService.getTotalExpenseAmount());
-
-                // Quỹ hiện có = tiền đã thu - tiền đã chi
-                Long currentFund = paidIncomeAmount - expenseAmount;
-
-                // Đẩy dữ liệu tài chính ra dashboard
-                model.addAttribute("totalPaymentAmount", totalIncomeAmount);
-                model.addAttribute("paidPaymentAmount", paidIncomeAmount);
-                model.addAttribute("unpaidPaymentAmount", unpaidIncomeAmount);
+                model.addAttribute("todayGuestCount", todayGuestPayments.size());
 
                 model.addAttribute(
-                                "paidPaymentCount",
-                                paymentService.countPaid() + guestPaymentService.countPaid());
+                                "todayGuestPaidAmount",
+                                safeLong(guestPaymentService.getPaidGuestAmountBetween(startOfToday, endOfToday)));
 
                 model.addAttribute(
-                                "unpaidPaymentCount",
-                                paymentService.countUnpaid() + guestPaymentService.countUnpaid());
+                                "todayGuestUnpaidAmount",
+                                safeLong(guestPaymentService.getUnpaidGuestAmountBetween(startOfToday, endOfToday)));
 
-                model.addAttribute("totalExpenseAmount", expenseAmount);
                 model.addAttribute("currentFund", currentFund);
-                model.addAttribute("totalExpenses", expenseService.countExpenses());
+
+                model.addAttribute("month", month);
+                model.addAttribute("monthPaidAmount", monthPaidAmount);
+                model.addAttribute("monthUnpaidAmount", monthUnpaidAmount);
+                model.addAttribute("monthExpenseAmount", monthExpenseAmount);
+                model.addAttribute("monthBalance", monthBalance);
 
                 return "dashboard";
         }
