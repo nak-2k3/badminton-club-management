@@ -1,18 +1,22 @@
 package com.badmintonclub.clubmanagement.controller;
 
 import com.badmintonclub.clubmanagement.entity.Schedule;
+import com.badmintonclub.clubmanagement.entity.User;
+import com.badmintonclub.clubmanagement.service.RegistrationService;
 import com.badmintonclub.clubmanagement.service.ScheduleService;
 import com.badmintonclub.clubmanagement.service.UserService;
+
+import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-import com.badmintonclub.clubmanagement.entity.User;
-import com.badmintonclub.clubmanagement.service.RegistrationService;
-import jakarta.validation.Valid;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+
 import java.security.Principal;
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller
 public class ScheduleController {
@@ -28,6 +32,7 @@ public class ScheduleController {
 
         @GetMapping("/schedules")
         public String listSchedules(Model model, Principal principal) {
+
                 var schedules = scheduleService.getAllSchedules();
 
                 User currentUser = null;
@@ -36,17 +41,31 @@ public class ScheduleController {
                         currentUser = userService.findByEmail(principal.getName());
                 }
 
+                Map<Long, Integer> memberCountMap = new HashMap<>();
+                Map<Long, Integer> guestCountMap = new HashMap<>();
+
                 for (Schedule schedule : schedules) {
-                        int currentPlayers = registrationService.countParticipants(schedule);
-                        schedule.setCurrentPlayers(currentPlayers);
+                        int memberCount = registrationService.countMemberParticipants(schedule);
+                        int guestCount = registrationService.countGuestParticipants(schedule);
+                        int totalPlayers = memberCount + guestCount;
+
+                        schedule.setCurrentPlayers(totalPlayers);
+
+                        memberCountMap.put(schedule.getId(), memberCount);
+                        guestCountMap.put(schedule.getId(), guestCount);
 
                         if (currentUser != null) {
-                                boolean registered = registrationService.isRegistered(currentUser, schedule);
+                                boolean registered = registrationService.isRegistered(
+                                                currentUser,
+                                                schedule);
+
                                 schedule.setRegistered(registered);
                         }
                 }
 
                 model.addAttribute("schedules", schedules);
+                model.addAttribute("memberCountMap", memberCountMap);
+                model.addAttribute("guestCountMap", guestCountMap);
 
                 return "schedules/list";
         }
@@ -82,12 +101,27 @@ public class ScheduleController {
                         @PathVariable Long id,
                         Principal principal) {
 
+                if (principal == null) {
+                        return "redirect:/login";
+                }
+
                 Schedule schedule = scheduleService.getScheduleById(id);
 
-                User user = userService.findByEmail(
-                                principal.getName());
+                if (schedule == null) {
+                        return "redirect:/schedules";
+                }
 
-                registrationService.register(user, schedule);
+                User user = userService.findByEmail(principal.getName());
+
+                if (registrationService.isScheduleFull(schedule)) {
+                        return "redirect:/schedules?full";
+                }
+
+                boolean success = registrationService.register(user, schedule);
+
+                if (!success) {
+                        return "redirect:/schedules?registerFailed";
+                }
 
                 return "redirect:/schedules";
         }
@@ -99,23 +133,18 @@ public class ScheduleController {
 
                 Schedule schedule = scheduleService.getScheduleById(id);
 
-                var registrations = registrationService
-                                .getRegistrationsBySchedule(
-                                                schedule);
+                var registrations = registrationService.getRegistrationsBySchedule(schedule);
 
-                model.addAttribute(
-                                "schedule",
-                                schedule);
-
-                model.addAttribute(
-                                "registrations",
-                                registrations);
+                model.addAttribute("schedule", schedule);
+                model.addAttribute("registrations", registrations);
 
                 return "schedules/participants";
         }
 
         @GetMapping("/schedules/edit/{id}")
-        public String showEditForm(@PathVariable Long id, Model model) {
+        public String showEditForm(
+                        @PathVariable Long id,
+                        Model model) {
 
                 Schedule schedule = scheduleService.getScheduleById(id);
 
@@ -152,11 +181,15 @@ public class ScheduleController {
                 return "redirect:/schedules";
         }
 
-        // hủy tham gia
         @GetMapping("/schedules/cancel-registration/{id}")
         public String cancelRegistration(
                         @PathVariable Long id,
                         Principal principal) {
+
+                if (principal == null) {
+                        return "redirect:/login";
+                }
+
                 Schedule schedule = scheduleService.getScheduleById(id);
                 User user = userService.findByEmail(principal.getName());
 
@@ -164,5 +197,4 @@ public class ScheduleController {
 
                 return "redirect:/schedules";
         }
-
 }

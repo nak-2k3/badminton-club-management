@@ -1,10 +1,15 @@
 package com.badmintonclub.clubmanagement.service;
 
-import com.badmintonclub.clubmanagement.entity.*;
+import com.badmintonclub.clubmanagement.entity.Registration;
+import com.badmintonclub.clubmanagement.entity.Schedule;
+import com.badmintonclub.clubmanagement.entity.User;
 import com.badmintonclub.clubmanagement.entity.enums.ScheduleStatus;
+import com.badmintonclub.clubmanagement.repository.GuestPaymentRepository;
 import com.badmintonclub.clubmanagement.repository.RegistrationRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
@@ -13,11 +18,11 @@ public class RegistrationService {
     @Autowired
     private RegistrationRepository registrationRepository;
 
-    public boolean register(
-            User user,
-            Schedule schedule) {
+    @Autowired
+    private GuestPaymentRepository guestPaymentRepository;
 
-        // khóa lịch
+    public boolean register(User user, Schedule schedule) {
+
         if (user == null || schedule == null) {
             return false;
         }
@@ -30,27 +35,21 @@ public class RegistrationService {
             return false;
         }
 
-        // full slot
-        int currentPlayers = registrationRepository.countBySchedule(schedule);
+        boolean alreadyRegistered = registrationRepository.existsByUserAndSchedule(
+                user,
+                schedule);
 
-        if (currentPlayers >= schedule.getMaxPlayers()) {
+        if (alreadyRegistered) {
             return false;
         }
 
-        // đăng ký trùng
-        boolean alreadyRegistered = registrationRepository
-                .existsByUserAndSchedule(
-                        user,
-                        schedule);
-
-        if (alreadyRegistered) {
+        if (isScheduleFull(schedule)) {
             return false;
         }
 
         Registration registration = new Registration();
 
         registration.setUser(user);
-
         registration.setSchedule(schedule);
 
         registrationRepository.save(registration);
@@ -58,18 +57,36 @@ public class RegistrationService {
         return true;
     }
 
-    public int countParticipants(
-            Schedule schedule) {
-
-        return registrationRepository
-                .countBySchedule(schedule);
+    public int countParticipants(Schedule schedule) {
+        return countMemberParticipants(schedule) + countGuestParticipants(schedule);
     }
 
-    public List<Registration> getRegistrationsBySchedule(
-            Schedule schedule) {
+    public int countMemberParticipants(Schedule schedule) {
+        if (schedule == null) {
+            return 0;
+        }
 
-        return registrationRepository
-                .findBySchedule(schedule);
+        return registrationRepository.countBySchedule(schedule);
+    }
+
+    public int countGuestParticipants(Schedule schedule) {
+        if (schedule == null) {
+            return 0;
+        }
+
+        return guestPaymentRepository.countBySchedule(schedule);
+    }
+
+    public boolean isScheduleFull(Schedule schedule) {
+        if (schedule == null || schedule.getMaxPlayers() == null) {
+            return true;
+        }
+
+        return countParticipants(schedule) >= schedule.getMaxPlayers();
+    }
+
+    public List<Registration> getRegistrationsBySchedule(Schedule schedule) {
+        return registrationRepository.findBySchedule(schedule);
     }
 
     public boolean cancelRegistration(User user, Schedule schedule) {
@@ -78,7 +95,9 @@ public class RegistrationService {
             return false;
         }
 
-        Registration registration = registrationRepository.findByUserAndSchedule(user, schedule);
+        Registration registration = registrationRepository.findByUserAndSchedule(
+                user,
+                schedule);
 
         if (registration == null) {
             return false;

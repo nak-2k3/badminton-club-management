@@ -2,14 +2,20 @@ package com.badmintonclub.clubmanagement.controller;
 
 import com.badmintonclub.clubmanagement.entity.GuestPayment;
 import com.badmintonclub.clubmanagement.entity.Schedule;
+import com.badmintonclub.clubmanagement.entity.enums.ScheduleStatus;
 import com.badmintonclub.clubmanagement.service.FeeSettingService;
 import com.badmintonclub.clubmanagement.service.GuestPaymentService;
+import com.badmintonclub.clubmanagement.service.RegistrationService;
 import com.badmintonclub.clubmanagement.service.ScheduleService;
+
+import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import java.util.Comparator;
+import java.util.List;
 
 @Controller
 public class GuestPaymentController {
@@ -23,6 +29,9 @@ public class GuestPaymentController {
     @Autowired
     private FeeSettingService feeSettingService;
 
+    @Autowired
+    private RegistrationService registrationService;
+
     @GetMapping("/guest-payments")
     public String listGuestPayments(Model model) {
 
@@ -35,6 +44,7 @@ public class GuestPaymentController {
         return "guest-payments/list";
     }
 
+    // Lịch đang mở, Lịch chưa diễn ra,Lịch chưa đủ người
     @GetMapping("/guest-payments/create")
     public String showCreateForm(Model model) {
 
@@ -43,8 +53,19 @@ public class GuestPaymentController {
         guestPayment.setAmount(
                 feeSettingService.getCurrentSetting().getGuestSessionFee());
 
+        LocalDateTime now = LocalDateTime.now();
+
+        List<Schedule> availableSchedules = scheduleService.getAllSchedules()
+                .stream()
+                .filter(schedule -> schedule.getStatus() == ScheduleStatus.OPEN)
+                .filter(schedule -> schedule.getPlayTime() != null)
+                .filter(schedule -> schedule.getPlayTime().isAfter(now))
+                .filter(schedule -> !registrationService.isScheduleFull(schedule))
+                .sorted(Comparator.comparing(Schedule::getPlayTime))
+                .toList();
+
         model.addAttribute("guestPayment", guestPayment);
-        model.addAttribute("schedules", scheduleService.getAllSchedules());
+        model.addAttribute("schedules", availableSchedules);
 
         return "guest-payments/create";
     }
@@ -55,6 +76,14 @@ public class GuestPaymentController {
             @ModelAttribute GuestPayment guestPayment) {
 
         Schedule schedule = scheduleService.getScheduleById(scheduleId);
+
+        if (schedule == null) {
+            return "redirect:/guest-payments/create?scheduleNotFound";
+        }
+
+        if (registrationService.isScheduleFull(schedule)) {
+            return "redirect:/guest-payments/create?full";
+        }
 
         guestPayment.setSchedule(schedule);
 
@@ -92,9 +121,23 @@ public class GuestPaymentController {
             return "redirect:/guest-payments";
         }
 
-        Schedule schedule = scheduleService.getScheduleById(scheduleId);
+        Schedule newSchedule = scheduleService.getScheduleById(scheduleId);
 
-        guestPayment.setSchedule(schedule);
+        if (newSchedule == null) {
+            return "redirect:/guest-payments/edit/" + id + "?scheduleNotFound";
+        }
+
+        Schedule oldSchedule = guestPayment.getSchedule();
+
+        boolean changingSchedule = oldSchedule == null
+                || oldSchedule.getId() == null
+                || !oldSchedule.getId().equals(newSchedule.getId());
+
+        if (changingSchedule && registrationService.isScheduleFull(newSchedule)) {
+            return "redirect:/guest-payments/edit/" + id + "?full";
+        }
+
+        guestPayment.setSchedule(newSchedule);
         guestPayment.setGuestName(formGuestPayment.getGuestName());
         guestPayment.setPhone(formGuestPayment.getPhone());
         guestPayment.setAmount(formGuestPayment.getAmount());
