@@ -11,6 +11,9 @@ import com.badmintonclub.clubmanagement.service.PaymentService;
 import com.badmintonclub.clubmanagement.service.UserService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +23,8 @@ import java.util.List;
 
 @Controller
 public class PaymentController {
+
+    private static final int PAGE_SIZE = 5;
 
     @Autowired
     private PaymentService paymentService;
@@ -34,12 +39,44 @@ public class PaymentController {
     private UserService userService;
 
     @GetMapping("/payments")
-    public String listPaymentBatches(Model model) {
+    public String listPaymentBatches(
+            @RequestParam(defaultValue = "") String batchType,
+            @RequestParam(defaultValue = "") String monthKey,
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            Model model) {
 
-        model.addAttribute("batches", paymentBatchService.getAllBatches());
+        if (page < 0) {
+            page = 0;
+        }
+
+        batchType = normalizeBatchType(batchType);
+        keyword = keyword != null ? keyword.trim() : "";
+
+        String month = convertMonthKeyToMonth(monthKey);
+
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE);
+
+        Page<PaymentBatch> batchPage = paymentBatchService.searchBatches(
+                batchType,
+                month,
+                keyword,
+                pageable);
+
+        model.addAttribute("batchPage", batchPage);
+        model.addAttribute("batches", batchPage.getContent());
 
         // Cho phép Thymeleaf gọi các hàm thống kê trong paymentService
         model.addAttribute("paymentService", paymentService);
+
+        model.addAttribute("batchType", batchType);
+        model.addAttribute("monthKey", monthKey);
+        model.addAttribute("keyword", keyword);
+
+        model.addAttribute("currentPage", batchPage.getNumber());
+        model.addAttribute("totalPages", batchPage.getTotalPages());
+        model.addAttribute("totalItems", batchPage.getTotalElements());
+        model.addAttribute("size", PAGE_SIZE);
 
         return "payments/list";
     }
@@ -317,6 +354,14 @@ public class PaymentController {
         paymentService.deletePayment(id);
 
         return "redirect:/payments/detail/" + batchId;
+    }
+
+    private String normalizeBatchType(String batchType) {
+        if ("MONTHLY".equals(batchType) || "EVENT".equals(batchType)) {
+            return batchType;
+        }
+
+        return "";
     }
 
     private String convertMonthKeyToMonth(String monthKey) {

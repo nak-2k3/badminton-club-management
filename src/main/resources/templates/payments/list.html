@@ -15,7 +15,12 @@
 
     <div class="container mt-5 mb-5">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Quản lý khoản thu</h2>
+        <div>
+          <h2>Quản lý khoản thu</h2>
+          <p class="text-muted mb-0">
+            Quản lý quỹ tháng, khoản thu phát sinh và tiến độ thu tiền.
+          </p>
+        </div>
 
         <div>
           <a th:href="@{/fee-settings}" class="btn btn-outline-secondary">
@@ -32,83 +37,225 @@
         </div>
       </div>
 
-      <table class="table table-bordered table-striped align-middle">
-        <thead class="table-dark">
-          <tr>
-            <th>STT</th>
-            <th>Tên khoản thu</th>
-            <th>Tháng</th>
-            <th>Hạn chót</th>
-            <th>Tổng phải thu</th>
-            <th>Đã thu</th>
-            <th>Còn thiếu</th>
-            <th>Tiến độ</th>
-            <th>Hành động</th>
-          </tr>
-        </thead>
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-dark text-white">Bộ lọc khoản thu</div>
 
-        <tbody>
-          <tr th:each="batch, stat : ${batches}">
-            <td th:text="${stat.count}"></td>
+        <div class="card-body">
+          <form th:action="@{/payments}" method="get" class="row g-3">
+            <input type="hidden" name="page" value="0" />
 
-            <td>
-              <strong th:text="${batch.title}"></strong>
-              <div
-                class="text-muted small"
-                th:text="${batch.note != null && !batch.note.isEmpty() ? batch.note : ''}"
-              ></div>
-            </td>
+            <div class="col-md-3">
+              <label class="form-label">Loại khoản thu</label>
 
-            <td
-              th:text="${batch.month != null && !batch.month.isEmpty() ? batch.month : '-'}"
-            ></td>
+              <select name="batchType" class="form-select">
+                <option value="" th:selected="${batchType == ''}">
+                  Tất cả
+                </option>
 
-            <td
-              th:text="${batch.dueDate != null ? #temporals.format(batch.dueDate, 'dd/MM/yyyy') : '-'}"
-            ></td>
+                <option value="MONTHLY" th:selected="${batchType == 'MONTHLY'}">
+                  Quỹ tháng
+                </option>
 
-            <td
-              th:text="${#numbers.formatInteger(paymentService.getTotalAmountByBatch(batch), 0, 'COMMA')} + ' VNĐ'"
-            ></td>
+                <option value="EVENT" th:selected="${batchType == 'EVENT'}">
+                  Khoản thu phát sinh
+                </option>
+              </select>
+            </div>
 
-            <td
-              class="text-success fw-bold"
-              th:text="${#numbers.formatInteger(paymentService.getPaidAmountByBatch(batch), 0, 'COMMA')} + ' VNĐ'"
-            ></td>
+            <div class="col-md-3">
+              <label class="form-label">Tháng</label>
 
-            <td
-              class="text-danger fw-bold"
-              th:text="${#numbers.formatInteger(paymentService.getUnpaidAmountByBatch(batch), 0, 'COMMA')} + ' VNĐ'"
-            ></td>
+              <input
+                type="month"
+                name="monthKey"
+                class="form-control"
+                th:value="${monthKey}"
+              />
+            </div>
 
-            <td style="min-width: 150px">
-              <div class="progress" style="height: 22px">
-                <div
-                  class="progress-bar"
-                  role="progressbar"
-                  th:style="'width: ' + ${paymentService.getProgressPercent(batch)} + '%'"
-                  th:text="${paymentService.getProgressPercent(batch)} + '%'"
-                ></div>
-              </div>
-            </td>
+            <div class="col-md-4">
+              <label class="form-label">Tên khoản thu</label>
 
-            <td>
-              <a
-                th:href="@{/payments/detail/{id}(id=${batch.id})}"
-                class="btn btn-primary btn-sm"
-              >
-                Xem chi tiết
+              <input
+                type="text"
+                name="keyword"
+                class="form-control"
+                placeholder="Ví dụ: áo đấu, quỹ tháng..."
+                th:value="${keyword}"
+              />
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end gap-2">
+              <button type="submit" class="btn btn-primary w-100">Lọc</button>
+
+              <a th:href="@{/payments}" class="btn btn-outline-secondary w-100">
+                Xóa
               </a>
-            </td>
-          </tr>
+            </div>
+          </form>
+        </div>
+      </div>
 
-          <tr th:if="${#lists.isEmpty(batches)}">
-            <td colspan="9" class="text-center text-muted">
-              Chưa có đợt thu nào.
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="card shadow-sm">
+        <div
+          class="card-header bg-dark text-white d-flex justify-content-between"
+        >
+          <span>Danh sách khoản thu</span>
+
+          <span>
+            Tổng:
+            <strong th:text="${totalItems}"></strong>
+            khoản thu
+          </span>
+        </div>
+
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>STT</th>
+                  <th>Tên khoản thu</th>
+                  <th>Loại</th>
+                  <th>Tháng</th>
+                  <th>Hạn chót</th>
+                  <th>Tổng phải thu</th>
+                  <th>Đã thu</th>
+                  <th>Còn thiếu</th>
+                  <th>Tiến độ</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr th:each="batch, stat : ${batches}">
+                  <td th:text="${currentPage * size + stat.count}"></td>
+
+                  <td>
+                    <strong th:text="${batch.title}"></strong>
+
+                    <div
+                      class="text-muted small"
+                      th:text="${batch.note != null && !batch.note.isEmpty() ? batch.note : ''}"
+                    ></div>
+                  </td>
+
+                  <td>
+                    <span
+                      th:if="${batch.batchType == 'MONTHLY'}"
+                      class="badge bg-success"
+                    >
+                      Quỹ tháng
+                    </span>
+
+                    <span
+                      th:if="${batch.batchType == 'EVENT'}"
+                      class="badge bg-primary"
+                    >
+                      Phát sinh
+                    </span>
+
+                    <span
+                      th:if="${batch.batchType == null or batch.batchType == ''}"
+                      class="badge bg-secondary"
+                    >
+                      Chưa phân loại
+                    </span>
+                  </td>
+
+                  <td
+                    th:text="${batch.month != null && !batch.month.isEmpty() ? batch.month : '-'}"
+                  ></td>
+
+                  <td
+                    th:text="${batch.dueDate != null ? #temporals.format(batch.dueDate, 'dd/MM/yyyy') : '-'}"
+                  ></td>
+
+                  <td
+                    th:text="${#numbers.formatInteger(paymentService.getTotalAmountByBatch(batch), 0, 'COMMA')} + ' VNĐ'"
+                  ></td>
+
+                  <td
+                    class="text-success fw-bold"
+                    th:text="${#numbers.formatInteger(paymentService.getPaidAmountByBatch(batch), 0, 'COMMA')} + ' VNĐ'"
+                  ></td>
+
+                  <td
+                    class="text-danger fw-bold"
+                    th:text="${#numbers.formatInteger(paymentService.getUnpaidAmountByBatch(batch), 0, 'COMMA')} + ' VNĐ'"
+                  ></td>
+
+                  <td style="min-width: 150px">
+                    <div class="progress" style="height: 22px">
+                      <div
+                        class="progress-bar"
+                        role="progressbar"
+                        th:style="'width: ' + ${paymentService.getProgressPercent(batch)} + '%'"
+                        th:text="${paymentService.getProgressPercent(batch)} + '%'"
+                      ></div>
+                    </div>
+                  </td>
+
+                  <td>
+                    <a
+                      th:href="@{/payments/detail/{id}(id=${batch.id})}"
+                      class="btn btn-primary btn-sm"
+                    >
+                      Xem chi tiết
+                    </a>
+                  </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(batches)}">
+                  <td colspan="10" class="text-center text-muted">
+                    Không có khoản thu phù hợp.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <nav th:if="${totalPages > 1}" class="mt-4">
+            <ul class="pagination justify-content-center mb-0">
+              <li
+                class="page-item"
+                th:classappend="${currentPage == 0} ? 'disabled'"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/payments(batchType=${batchType}, monthKey=${monthKey}, keyword=${keyword}, page=${currentPage - 1})}"
+                >
+                  Trước
+                </a>
+              </li>
+
+              <li
+                class="page-item"
+                th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                th:classappend="${i == currentPage} ? 'active'"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/payments(batchType=${batchType}, monthKey=${monthKey}, keyword=${keyword}, page=${i})}"
+                  th:text="${i + 1}"
+                ></a>
+              </li>
+
+              <li
+                class="page-item"
+                th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/payments(batchType=${batchType}, monthKey=${monthKey}, keyword=${keyword}, page=${currentPage + 1})}"
+                >
+                  Sau
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

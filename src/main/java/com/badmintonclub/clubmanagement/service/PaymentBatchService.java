@@ -4,6 +4,8 @@ import com.badmintonclub.clubmanagement.entity.PaymentBatch;
 import com.badmintonclub.clubmanagement.repository.PaymentBatchRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,6 +18,18 @@ public class PaymentBatchService {
 
     public List<PaymentBatch> getAllBatches() {
         return paymentBatchRepository.findAllByOrderByIdDesc();
+    }
+
+    public Page<PaymentBatch> searchBatches(
+            String batchType,
+            String month,
+            String keyword,
+            Pageable pageable) {
+        return paymentBatchRepository.searchBatches(
+                batchType,
+                month,
+                keyword,
+                pageable);
     }
 
     public PaymentBatch getBatchById(Long id) {
@@ -34,7 +48,7 @@ public class PaymentBatchService {
         return paymentBatchRepository.existsByBatchTypeAndMonth("MONTHLY", month);
     }
 
-    // chi thu theo tháng
+    // Thu chi theo tháng
     public List<PaymentBatch> getBatchesByMonth(String month) {
         return paymentBatchRepository.findByMonthOrderByIdDesc(month);
     }
