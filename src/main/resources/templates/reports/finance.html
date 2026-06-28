@@ -117,7 +117,7 @@
         </div>
       </div>
 
-      <div class="row g-3 mb-5">
+      <div class="row g-3 mb-4">
         <div class="col-md-4">
           <div class="card shadow-sm">
             <div
@@ -165,9 +165,69 @@
         </div>
       </div>
 
+      <div class="row g-3 mb-5">
+        <div class="col-md-6">
+          <div class="card border-primary shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="text-muted">Thu từ thành viên</h6>
+
+              <h4
+                class="text-primary mb-2"
+                th:text="${#numbers.formatInteger(memberPaidAmount, 0, 'COMMA')} + ' VNĐ'"
+              ></h4>
+
+              <div class="text-muted small">
+                Phải thu:
+                <strong
+                  th:text="${#numbers.formatInteger(memberTotalAmount, 0, 'COMMA')} + ' VNĐ'"
+                ></strong>
+                - Chưa thu:
+                <strong
+                  class="text-danger"
+                  th:text="${#numbers.formatInteger(memberUnpaidAmount, 0, 'COMMA')} + ' VNĐ'"
+                ></strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card border-warning shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="text-muted">Thu từ khách vãng lai</h6>
+
+              <h4
+                class="text-warning mb-2"
+                th:text="${#numbers.formatInteger(guestPaidAmount, 0, 'COMMA')} + ' VNĐ'"
+              ></h4>
+
+              <div class="text-muted small">
+                Phải thu:
+                <strong
+                  th:text="${#numbers.formatInteger(guestTotalAmount, 0, 'COMMA')} + ' VNĐ'"
+                ></strong>
+                - Chưa thu:
+                <strong
+                  class="text-danger"
+                  th:text="${#numbers.formatInteger(guestUnpaidAmount, 0, 'COMMA')} + ' VNĐ'"
+                ></strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-dark text-white">
-          Các khoản thu trong tháng
+        <div
+          class="card-header bg-dark text-white d-flex justify-content-between"
+        >
+          <span>Các khoản thu thành viên trong tháng</span>
+
+          <span>
+            Tổng:
+            <strong th:text="${incomeTotalItems}"></strong>
+            khoản
+          </span>
         </div>
 
         <div class="card-body">
@@ -176,6 +236,7 @@
               <tr>
                 <th>STT</th>
                 <th>Tên khoản thu</th>
+                <th>Loại</th>
                 <th>Tháng</th>
                 <th>Hạn chót</th>
                 <th>Ghi chú</th>
@@ -185,9 +246,32 @@
 
             <tbody>
               <tr th:each="batch, stat : ${batches}">
-                <td th:text="${stat.count}"></td>
+                <td th:text="${incomeCurrentPage * size + stat.count}"></td>
 
                 <td th:text="${batch.title}"></td>
+
+                <td>
+                  <span
+                    th:if="${batch.batchType == 'MONTHLY'}"
+                    class="badge bg-success"
+                  >
+                    Quỹ tháng
+                  </span>
+
+                  <span
+                    th:if="${batch.batchType == 'EVENT'}"
+                    class="badge bg-primary"
+                  >
+                    Phát sinh
+                  </span>
+
+                  <span
+                    th:if="${batch.batchType == null or batch.batchType == ''}"
+                    class="badge bg-secondary"
+                  >
+                    Chưa phân loại
+                  </span>
+                </td>
 
                 <td th:text="${batch.month}"></td>
 
@@ -210,18 +294,191 @@
               </tr>
 
               <tr th:if="${#lists.isEmpty(batches)}">
-                <td colspan="6" class="text-center text-muted">
+                <td colspan="7" class="text-center text-muted">
                   Không có khoản thu nào trong tháng này.
                 </td>
               </tr>
             </tbody>
           </table>
+
+          <nav th:if="${incomeTotalPages > 1}" class="mt-4">
+            <ul class="pagination justify-content-center mb-0">
+              <li
+                class="page-item"
+                th:classappend="${incomeCurrentPage == 0} ? 'disabled'"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/reports/finance(monthKey=${monthKey}, incomePage=${incomeCurrentPage - 1}, guestPage=${guestCurrentPage}, expensePage=${expenseCurrentPage})}"
+                >
+                  Trước
+                </a>
+              </li>
+
+              <li
+                class="page-item"
+                th:each="i : ${#numbers.sequence(0, incomeTotalPages - 1)}"
+                th:classappend="${i == incomeCurrentPage} ? 'active'"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/reports/finance(monthKey=${monthKey}, incomePage=${i}, guestPage=${guestCurrentPage}, expensePage=${expenseCurrentPage})}"
+                  th:text="${i + 1}"
+                ></a>
+              </li>
+
+              <li
+                class="page-item"
+                th:classappend="${incomeCurrentPage + 1 >= incomeTotalPages} ? 'disabled'"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/reports/finance(monthKey=${monthKey}, incomePage=${incomeCurrentPage + 1}, guestPage=${guestCurrentPage}, expensePage=${expenseCurrentPage})}"
+                >
+                  Sau
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+
+      <div class="card mb-4 shadow-sm">
+        <div
+          class="card-header bg-warning text-dark d-flex justify-content-between"
+        >
+          <span>Khách vãng lai trong tháng</span>
+
+          <span>
+            Tổng:
+            <strong th:text="${guestTotalItems}"></strong>
+            khách
+          </span>
+        </div>
+
+        <div class="card-body">
+          <table class="table table-bordered table-striped align-middle mb-0">
+            <thead class="table-dark">
+              <tr>
+                <th>STT</th>
+                <th>Tên khách</th>
+                <th>Buổi đánh</th>
+                <th>Số tiền</th>
+                <th>Trạng thái</th>
+                <th>Ngày thu</th>
+                <th>Hình thức</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr th:each="guestPayment, stat : ${guestPayments}">
+                <td th:text="${guestCurrentPage * size + stat.count}"></td>
+
+                <td th:text="${guestPayment.guestName}"></td>
+
+                <td>
+                  <span
+                    th:text="${guestPayment.schedule != null ? guestPayment.schedule.title : '-'}"
+                  ></span>
+
+                  <div
+                    class="text-muted small"
+                    th:if="${guestPayment.schedule != null && guestPayment.schedule.playTime != null}"
+                    th:text="${#temporals.format(guestPayment.schedule.playTime, 'dd/MM/yyyy HH:mm')}"
+                  ></div>
+                </td>
+
+                <td
+                  class="fw-bold"
+                  th:text="${#numbers.formatInteger(guestPayment.amount, 0, 'COMMA')} + ' VNĐ'"
+                ></td>
+
+                <td>
+                  <span
+                    th:if="${guestPayment.status.name() == 'PAID'}"
+                    class="badge bg-success"
+                  >
+                    Đã thu
+                  </span>
+
+                  <span
+                    th:if="${guestPayment.status.name() == 'UNPAID'}"
+                    class="badge bg-danger"
+                  >
+                    Chưa thu
+                  </span>
+                </td>
+
+                <td
+                  th:text="${guestPayment.paidDate != null ? #temporals.format(guestPayment.paidDate, 'dd/MM/yyyy') : '-'}"
+                ></td>
+
+                <td
+                  th:text="${guestPayment.paymentMethod != null ? guestPayment.paymentMethod : '-'}"
+                ></td>
+              </tr>
+
+              <tr th:if="${#lists.isEmpty(guestPayments)}">
+                <td colspan="7" class="text-center text-muted">
+                  Không có khách vãng lai nào trong tháng này.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <nav th:if="${guestTotalPages > 1}" class="mt-4">
+            <ul class="pagination justify-content-center mb-0">
+              <li
+                class="page-item"
+                th:classappend="${guestCurrentPage == 0} ? 'disabled'"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/reports/finance(monthKey=${monthKey}, incomePage=${incomeCurrentPage}, guestPage=${guestCurrentPage - 1}, expensePage=${expenseCurrentPage})}"
+                >
+                  Trước
+                </a>
+              </li>
+
+              <li
+                class="page-item"
+                th:each="i : ${#numbers.sequence(0, guestTotalPages - 1)}"
+                th:classappend="${i == guestCurrentPage} ? 'active'"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/reports/finance(monthKey=${monthKey}, incomePage=${incomeCurrentPage}, guestPage=${i}, expensePage=${expenseCurrentPage})}"
+                  th:text="${i + 1}"
+                ></a>
+              </li>
+
+              <li
+                class="page-item"
+                th:classappend="${guestCurrentPage + 1 >= guestTotalPages} ? 'disabled'"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/reports/finance(monthKey=${monthKey}, incomePage=${incomeCurrentPage}, guestPage=${guestCurrentPage + 1}, expensePage=${expenseCurrentPage})}"
+                >
+                  Sau
+                </a>
+              </li>
+            </ul>
+          </nav>
         </div>
       </div>
 
       <div class="card shadow-sm">
-        <div class="card-header bg-danger text-white">
-          Các khoản chi trong tháng
+        <div
+          class="card-header bg-danger text-white d-flex justify-content-between"
+        >
+          <span>Các khoản chi trong tháng</span>
+
+          <span>
+            Tổng:
+            <strong th:text="${expenseTotalItems}"></strong>
+            khoản
+          </span>
         </div>
 
         <div class="card-body">
@@ -239,7 +496,7 @@
 
             <tbody>
               <tr th:each="expense, stat : ${expenses}">
-                <td th:text="${stat.count}"></td>
+                <td th:text="${expenseCurrentPage * size + stat.count}"></td>
 
                 <td th:text="${expense.title}"></td>
 
@@ -268,6 +525,46 @@
               </tr>
             </tbody>
           </table>
+
+          <nav th:if="${expenseTotalPages > 1}" class="mt-4">
+            <ul class="pagination justify-content-center mb-0">
+              <li
+                class="page-item"
+                th:classappend="${expenseCurrentPage == 0} ? 'disabled'"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/reports/finance(monthKey=${monthKey}, incomePage=${incomeCurrentPage}, guestPage=${guestCurrentPage}, expensePage=${expenseCurrentPage - 1})}"
+                >
+                  Trước
+                </a>
+              </li>
+
+              <li
+                class="page-item"
+                th:each="i : ${#numbers.sequence(0, expenseTotalPages - 1)}"
+                th:classappend="${i == expenseCurrentPage} ? 'active'"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/reports/finance(monthKey=${monthKey}, incomePage=${incomeCurrentPage}, guestPage=${guestCurrentPage}, expensePage=${i})}"
+                  th:text="${i + 1}"
+                ></a>
+              </li>
+
+              <li
+                class="page-item"
+                th:classappend="${expenseCurrentPage + 1 >= expenseTotalPages} ? 'disabled'"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/reports/finance(monthKey=${monthKey}, incomePage=${incomeCurrentPage}, guestPage=${guestCurrentPage}, expensePage=${expenseCurrentPage + 1})}"
+                >
+                  Sau
+                </a>
+              </li>
+            </ul>
+          </nav>
         </div>
       </div>
     </div>
