@@ -5,6 +5,8 @@ import com.badmintonclub.clubmanagement.entity.User;
 import com.badmintonclub.clubmanagement.service.RegistrationService;
 import com.badmintonclub.clubmanagement.service.ScheduleService;
 import com.badmintonclub.clubmanagement.service.UserService;
+import com.badmintonclub.clubmanagement.entity.enums.AttendanceStatus;
+import com.badmintonclub.clubmanagement.service.GuestPaymentService;
 
 import jakarta.validation.Valid;
 
@@ -30,6 +32,9 @@ public class ScheduleController {
 
         @Autowired
         private UserService userService;
+
+        @Autowired
+        private GuestPaymentService guestPaymentService;
 
         @GetMapping("/schedules")
         public String listSchedules(
@@ -152,10 +157,25 @@ public class ScheduleController {
 
                 Schedule schedule = scheduleService.getScheduleById(id);
 
+                if (schedule == null) {
+                        return "redirect:/schedules";
+                }
+
                 var registrations = registrationService.getRegistrationsBySchedule(schedule);
+
+                var guestPayments = guestPaymentService.getGuestPaymentsBySchedule(schedule);
+
+                int memberCount = registrations.size();
+                int guestCount = guestPayments.size();
+                int totalCount = memberCount + guestCount;
 
                 model.addAttribute("schedule", schedule);
                 model.addAttribute("registrations", registrations);
+                model.addAttribute("guestPayments", guestPayments);
+
+                model.addAttribute("memberCount", memberCount);
+                model.addAttribute("guestCount", guestCount);
+                model.addAttribute("totalCount", totalCount);
 
                 return "schedules/participants";
         }
@@ -215,5 +235,28 @@ public class ScheduleController {
                 registrationService.cancelRegistration(user, schedule);
 
                 return "redirect:/schedules";
+        }
+
+        // điểm danh
+        @PostMapping("/schedules/registrations/{id}/attendance")
+        public String markRegistrationAttendance(
+                        @PathVariable Long id,
+                        @RequestParam AttendanceStatus attendanceStatus,
+                        @RequestParam Long scheduleId) {
+
+                registrationService.markAttendance(id, attendanceStatus);
+
+                return "redirect:/schedules/participants/" + scheduleId;
+        }
+
+        @PostMapping("/schedules/guest-payments/{id}/attendance")
+        public String markGuestAttendance(
+                        @PathVariable Long id,
+                        @RequestParam AttendanceStatus attendanceStatus,
+                        @RequestParam Long scheduleId) {
+
+                guestPaymentService.markAttendance(id, attendanceStatus);
+
+                return "redirect:/schedules/participants/" + scheduleId;
         }
 }

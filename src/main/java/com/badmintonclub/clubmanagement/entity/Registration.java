@@ -1,6 +1,9 @@
 package com.badmintonclub.clubmanagement.entity;
 
+import com.badmintonclub.clubmanagement.entity.enums.AttendanceStatus;
+
 import jakarta.persistence.*;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,4 +26,8 @@ public class Registration {
     @ManyToOne
     @JoinColumn(name = "schedule_id")
     private Schedule schedule;
+
+    // Trạng thái điểm danh
+    @Enumerated(EnumType.STRING)
+    private AttendanceStatus attendanceStatus = AttendanceStatus.NOT_MARKED;
 }

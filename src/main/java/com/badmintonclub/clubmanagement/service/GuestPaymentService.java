@@ -2,6 +2,7 @@ package com.badmintonclub.clubmanagement.service;
 
 import com.badmintonclub.clubmanagement.entity.GuestPayment;
 import com.badmintonclub.clubmanagement.entity.Schedule;
+import com.badmintonclub.clubmanagement.entity.enums.AttendanceStatus;
 import com.badmintonclub.clubmanagement.entity.enums.PaymentStatus;
 import com.badmintonclub.clubmanagement.repository.GuestPaymentRepository;
 
@@ -26,6 +27,12 @@ public class GuestPaymentService {
 
     public Page<GuestPayment> getAllGuestPaymentsPage(Pageable pageable) {
         return guestPaymentRepository.findAllForPage(pageable);
+    }
+
+    public Page<GuestPayment> getGuestPaymentsPageBySchedule(
+            Schedule schedule,
+            Pageable pageable) {
+        return guestPaymentRepository.findByScheduleOrderByIdDesc(schedule, pageable);
     }
 
     public Page<GuestPayment> getGuestPaymentsPageBetween(
@@ -103,6 +110,22 @@ public class GuestPaymentService {
         return guestPaymentRepository.sumAmountByStatus(PaymentStatus.UNPAID);
     }
 
+    public Long getTotalGuestAmountBySchedule(Schedule schedule) {
+        return guestPaymentRepository.sumAmountBySchedule(schedule);
+    }
+
+    public Long getPaidGuestAmountBySchedule(Schedule schedule) {
+        return guestPaymentRepository.sumAmountByScheduleAndStatus(
+                schedule,
+                PaymentStatus.PAID);
+    }
+
+    public Long getUnpaidGuestAmountBySchedule(Schedule schedule) {
+        return guestPaymentRepository.sumAmountByScheduleAndStatus(
+                schedule,
+                PaymentStatus.UNPAID);
+    }
+
     public Long getTotalGuestAmountBetween(
             LocalDateTime startDateTime,
             LocalDateTime endDateTime) {
@@ -153,5 +176,14 @@ public class GuestPaymentService {
         return guestPaymentRepository.findByScheduleTimeBetween(
                 startDateTime,
                 endDateTime);
+    }
+
+    public void markAttendance(Long guestPaymentId, AttendanceStatus attendanceStatus) {
+        GuestPayment guestPayment = getGuestPaymentById(guestPaymentId);
+
+        if (guestPayment != null) {
+            guestPayment.setAttendanceStatus(attendanceStatus);
+            guestPaymentRepository.save(guestPayment);
+        }
     }
 }

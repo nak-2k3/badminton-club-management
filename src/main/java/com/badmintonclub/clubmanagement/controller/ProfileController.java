@@ -22,6 +22,7 @@ public class ProfileController {
 
     @Autowired
     private UserService userService;
+
     @Autowired
     private RegistrationService registrationService;
 
@@ -30,8 +31,20 @@ public class ProfileController {
 
         User user = userService.findByEmail(principal.getName());
 
+        int totalJoined = registrationService.countByUser(user);
+        long presentCount = registrationService.countPresentByUser(user);
+        long absentCount = registrationService.countAbsentByUser(user);
+        long notMarkedCount = registrationService.countNotMarkedByUser(user);
+        int attendanceRate = registrationService.calculateAttendanceRate(user);
+
         model.addAttribute("user", user);
-        model.addAttribute("totalJoined", registrationService.countByUser(user));
+
+        model.addAttribute("totalJoined", totalJoined);
+        model.addAttribute("presentCount", presentCount);
+        model.addAttribute("absentCount", absentCount);
+        model.addAttribute("notMarkedCount", notMarkedCount);
+        model.addAttribute("attendanceRate", attendanceRate);
+
         model.addAttribute("myRegistrations", registrationService.getRegistrationsByUser(user));
 
         return "profile";
@@ -91,5 +104,4 @@ public class ProfileController {
 
         return "change-password";
     }
-
 }

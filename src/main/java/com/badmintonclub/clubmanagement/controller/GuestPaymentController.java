@@ -19,11 +19,14 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 import java.util.Comparator;
 import java.util.List;
 
 @Controller
 public class GuestPaymentController {
+
+    private static final int PAGE_SIZE = 5;
 
     @Autowired
     private GuestPaymentService guestPaymentService;
@@ -41,17 +44,15 @@ public class GuestPaymentController {
     public String listGuestPayments(
             @RequestParam(defaultValue = "today") String filter,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long scheduleId,
+            @RequestParam(required = false) String dateKey,
             Model model) {
+
         if (page < 0) {
             page = 0;
         }
 
-        if (size != 5 && size != 10 && size != 25 && size != 50) {
-            size = 10;
-        }
-
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE);
 
         Page<GuestPayment> guestPaymentPage;
 
@@ -60,6 +61,8 @@ public class GuestPaymentController {
         Long unpaidGuestAmount;
 
         String pageTitle;
+        List<Schedule> schedulesForFilter = List.of();
+        Long selectedScheduleId = null;
 
         if ("month".equals(filter)) {
             YearMonth currentMonth = YearMonth.now();
@@ -67,32 +70,82 @@ public class GuestPaymentController {
             LocalDateTime startDateTime = currentMonth.atDay(1).atStartOfDay();
             LocalDateTime endDateTime = currentMonth.plusMonths(1).atDay(1).atStartOfDay();
 
-            guestPaymentPage = guestPaymentService.getGuestPaymentsPageBetween(
-                    startDateTime,
-                    endDateTime,
-                    pageable);
+            schedulesForFilter = getSchedulesBetween(startDateTime, endDateTime);
 
-            totalGuestAmount = guestPaymentService.getTotalGuestAmountBetween(
-                    startDateTime,
-                    endDateTime);
+            Schedule selectedSchedule = getValidSelectedSchedule(scheduleId, schedulesForFilter);
 
-            paidGuestAmount = guestPaymentService.getPaidGuestAmountBetween(
-                    startDateTime,
-                    endDateTime);
+            if (selectedSchedule != null) {
+                selectedScheduleId = selectedSchedule.getId();
 
-            unpaidGuestAmount = guestPaymentService.getUnpaidGuestAmountBetween(
-                    startDateTime,
-                    endDateTime);
+                guestPaymentPage = guestPaymentService.getGuestPaymentsPageBySchedule(
+                        selectedSchedule,
+                        pageable);
 
-            pageTitle = "Quản lý khách vãng lai tháng này";
+                totalGuestAmount = guestPaymentService.getTotalGuestAmountBySchedule(selectedSchedule);
+                paidGuestAmount = guestPaymentService.getPaidGuestAmountBySchedule(selectedSchedule);
+                unpaidGuestAmount = guestPaymentService.getUnpaidGuestAmountBySchedule(selectedSchedule);
+
+                pageTitle = "Khách vãng lai tháng này - " + selectedSchedule.getTitle();
+            } else {
+                guestPaymentPage = guestPaymentService.getGuestPaymentsPageBetween(
+                        startDateTime,
+                        endDateTime,
+                        pageable);
+
+                totalGuestAmount = guestPaymentService.getTotalGuestAmountBetween(
+                        startDateTime,
+                        endDateTime);
+
+                paidGuestAmount = guestPaymentService.getPaidGuestAmountBetween(
+                        startDateTime,
+                        endDateTime);
+
+                unpaidGuestAmount = guestPaymentService.getUnpaidGuestAmountBetween(
+                        startDateTime,
+                        endDateTime);
+
+                pageTitle = "Quản lý khách vãng lai tháng này";
+            }
+
+            dateKey = "";
+
         } else if ("all".equals(filter)) {
-            guestPaymentPage = guestPaymentService.getAllGuestPaymentsPage(pageable);
+            LocalDate selectedDate = parseDateKey(dateKey);
 
-            totalGuestAmount = guestPaymentService.getTotalGuestAmount();
-            paidGuestAmount = guestPaymentService.getPaidGuestAmount();
-            unpaidGuestAmount = guestPaymentService.getUnpaidGuestAmount();
+            if (selectedDate != null) {
+                LocalDateTime startDateTime = selectedDate.atStartOfDay();
+                LocalDateTime endDateTime = selectedDate.plusDays(1).atStartOfDay();
 
-            pageTitle = "Tất cả khách vãng lai";
+                guestPaymentPage = guestPaymentService.getGuestPaymentsPageBetween(
+                        startDateTime,
+                        endDateTime,
+                        pageable);
+
+                totalGuestAmount = guestPaymentService.getTotalGuestAmountBetween(
+                        startDateTime,
+                        endDateTime);
+
+                paidGuestAmount = guestPaymentService.getPaidGuestAmountBetween(
+                        startDateTime,
+                        endDateTime);
+
+                unpaidGuestAmount = guestPaymentService.getUnpaidGuestAmountBetween(
+                        startDateTime,
+                        endDateTime);
+
+                pageTitle = "Khách vãng lai ngày " + formatDateDisplay(selectedDate);
+                dateKey = selectedDate.toString();
+            } else {
+                guestPaymentPage = guestPaymentService.getAllGuestPaymentsPage(pageable);
+
+                totalGuestAmount = guestPaymentService.getTotalGuestAmount();
+                paidGuestAmount = guestPaymentService.getPaidGuestAmount();
+                unpaidGuestAmount = guestPaymentService.getUnpaidGuestAmount();
+
+                pageTitle = "Tất cả khách vãng lai";
+                dateKey = "";
+            }
+
         } else {
             filter = "today";
 
@@ -101,24 +154,44 @@ public class GuestPaymentController {
             LocalDateTime startDateTime = today.atStartOfDay();
             LocalDateTime endDateTime = today.plusDays(1).atStartOfDay();
 
-            guestPaymentPage = guestPaymentService.getGuestPaymentsPageBetween(
-                    startDateTime,
-                    endDateTime,
-                    pageable);
+            schedulesForFilter = getSchedulesBetween(startDateTime, endDateTime);
 
-            totalGuestAmount = guestPaymentService.getTotalGuestAmountBetween(
-                    startDateTime,
-                    endDateTime);
+            Schedule selectedSchedule = getValidSelectedSchedule(scheduleId, schedulesForFilter);
 
-            paidGuestAmount = guestPaymentService.getPaidGuestAmountBetween(
-                    startDateTime,
-                    endDateTime);
+            if (selectedSchedule != null) {
+                selectedScheduleId = selectedSchedule.getId();
 
-            unpaidGuestAmount = guestPaymentService.getUnpaidGuestAmountBetween(
-                    startDateTime,
-                    endDateTime);
+                guestPaymentPage = guestPaymentService.getGuestPaymentsPageBySchedule(
+                        selectedSchedule,
+                        pageable);
 
-            pageTitle = "Quản lý khách vãng lai hôm nay";
+                totalGuestAmount = guestPaymentService.getTotalGuestAmountBySchedule(selectedSchedule);
+                paidGuestAmount = guestPaymentService.getPaidGuestAmountBySchedule(selectedSchedule);
+                unpaidGuestAmount = guestPaymentService.getUnpaidGuestAmountBySchedule(selectedSchedule);
+
+                pageTitle = "Khách vãng lai hôm nay - " + selectedSchedule.getTitle();
+            } else {
+                guestPaymentPage = guestPaymentService.getGuestPaymentsPageBetween(
+                        startDateTime,
+                        endDateTime,
+                        pageable);
+
+                totalGuestAmount = guestPaymentService.getTotalGuestAmountBetween(
+                        startDateTime,
+                        endDateTime);
+
+                paidGuestAmount = guestPaymentService.getPaidGuestAmountBetween(
+                        startDateTime,
+                        endDateTime);
+
+                unpaidGuestAmount = guestPaymentService.getUnpaidGuestAmountBetween(
+                        startDateTime,
+                        endDateTime);
+
+                pageTitle = "Quản lý khách vãng lai hôm nay";
+            }
+
+            dateKey = "";
         }
 
         model.addAttribute("guestPaymentPage", guestPaymentPage);
@@ -133,7 +206,11 @@ public class GuestPaymentController {
         model.addAttribute("currentPage", guestPaymentPage.getNumber());
         model.addAttribute("totalPages", guestPaymentPage.getTotalPages());
         model.addAttribute("totalItems", guestPaymentPage.getTotalElements());
-        model.addAttribute("size", size);
+
+        model.addAttribute("size", PAGE_SIZE);
+        model.addAttribute("schedulesForFilter", schedulesForFilter);
+        model.addAttribute("selectedScheduleId", selectedScheduleId);
+        model.addAttribute("dateKey", dateKey);
 
         return "guest-payments/list";
     }
@@ -244,27 +321,118 @@ public class GuestPaymentController {
     @PostMapping("/guest-payments/paid/{id}")
     public String markAsPaid(
             @PathVariable Long id,
-            @RequestParam(defaultValue = "Tiền mặt") String paymentMethod) {
+            @RequestParam(defaultValue = "Tiền mặt") String paymentMethod,
+            @RequestParam(defaultValue = "today") String filter,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) Long scheduleId,
+            @RequestParam(required = false) String dateKey) {
 
         guestPaymentService.markAsPaid(id, paymentMethod);
 
-        return "redirect:/guest-payments";
+        return buildRedirect(filter, page, scheduleId, dateKey);
     }
 
     @PostMapping("/guest-payments/unpaid/{id}")
-    public String markAsUnpaid(@PathVariable Long id) {
+    public String markAsUnpaid(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "today") String filter,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) Long scheduleId,
+            @RequestParam(required = false) String dateKey) {
 
         guestPaymentService.markAsUnpaid(id);
 
-        return "redirect:/guest-payments";
+        return buildRedirect(filter, page, scheduleId, dateKey);
     }
 
     @GetMapping("/guest-payments/delete/{id}")
-    public String deleteGuestPayment(@PathVariable Long id) {
+    public String deleteGuestPayment(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "today") String filter,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) Long scheduleId,
+            @RequestParam(required = false) String dateKey) {
 
         guestPaymentService.deleteGuestPayment(id);
 
-        return "redirect:/guest-payments";
+        return buildRedirect(filter, page, scheduleId, dateKey);
+    }
+
+    private List<Schedule> getSchedulesBetween(
+            LocalDateTime startDateTime,
+            LocalDateTime endDateTime) {
+
+        return scheduleService.getAllSchedules()
+                .stream()
+                .filter(schedule -> schedule.getPlayTime() != null)
+                .filter(schedule -> !schedule.getPlayTime().isBefore(startDateTime))
+                .filter(schedule -> schedule.getPlayTime().isBefore(endDateTime))
+                .sorted(Comparator.comparing(Schedule::getPlayTime))
+                .toList();
+    }
+
+    private Schedule getValidSelectedSchedule(
+            Long scheduleId,
+            List<Schedule> schedulesForFilter) {
+
+        if (scheduleId == null) {
+            return null;
+        }
+
+        return schedulesForFilter
+                .stream()
+                .filter(schedule -> schedule.getId().equals(scheduleId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private LocalDate parseDateKey(String dateKey) {
+        if (dateKey == null || dateKey.isBlank()) {
+            return null;
+        }
+
+        try {
+            return LocalDate.parse(dateKey);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    private String formatDateDisplay(LocalDate date) {
+        return String.format(
+                "%02d/%02d/%04d",
+                date.getDayOfMonth(),
+                date.getMonthValue(),
+                date.getYear());
+    }
+
+    private String buildRedirect(
+            String filter,
+            int page,
+            Long scheduleId,
+            String dateKey) {
+
+        if (filter == null || filter.isBlank()) {
+            filter = "today";
+        }
+
+        if (page < 0) {
+            page = 0;
+        }
+
+        StringBuilder redirect = new StringBuilder("redirect:/guest-payments?filter=");
+        redirect.append(filter);
+        redirect.append("&page=").append(page);
+
+        if (scheduleId != null && !"all".equals(filter)) {
+            redirect.append("&scheduleId=").append(scheduleId);
+        }
+
+        if (dateKey != null && !dateKey.isBlank() && "all".equals(filter)) {
+            redirect.append("&dateKey=").append(dateKey);
+        }
+
+        return redirect.toString();
     }
 
     private Long safeLong(Long value) {

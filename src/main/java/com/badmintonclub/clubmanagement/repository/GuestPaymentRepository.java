@@ -23,6 +23,8 @@ public interface GuestPaymentRepository extends JpaRepository<GuestPayment, Long
 
         long countByStatus(PaymentStatus status);
 
+        Page<GuestPayment> findByScheduleOrderByIdDesc(Schedule schedule, Pageable pageable);
+
         @Query(value = """
                          SELECT g
                          FROM GuestPayment g
@@ -56,6 +58,19 @@ public interface GuestPaymentRepository extends JpaRepository<GuestPayment, Long
 
         @Query("SELECT COALESCE(SUM(g.amount), 0) FROM GuestPayment g WHERE g.status = :status")
         Long sumAmountByStatus(@Param("status") PaymentStatus status);
+
+        @Query("SELECT COALESCE(SUM(g.amount), 0) FROM GuestPayment g WHERE g.schedule = :schedule")
+        Long sumAmountBySchedule(@Param("schedule") Schedule schedule);
+
+        @Query("""
+                         SELECT COALESCE(SUM(g.amount), 0)
+                         FROM GuestPayment g
+                         WHERE g.schedule = :schedule
+                         AND g.status = :status
+                        """)
+        Long sumAmountByScheduleAndStatus(
+                        @Param("schedule") Schedule schedule,
+                        @Param("status") PaymentStatus status);
 
         @Query("""
                          SELECT COALESCE(SUM(g.amount), 0)

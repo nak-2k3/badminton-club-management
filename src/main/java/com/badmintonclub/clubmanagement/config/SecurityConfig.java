@@ -57,13 +57,16 @@ public class SecurityConfig {
                                                 .hasRole("ADMIN")
 
                                                 // Schedule management chỉ Admin
+                                                // Schedule management chỉ Admin
                                                 .requestMatchers(
                                                                 "/schedules/create",
                                                                 "/schedules/save",
                                                                 "/schedules/edit/**",
                                                                 "/schedules/lock/**",
                                                                 "/schedules/open/**",
-                                                                "/schedules/cancel/**")
+                                                                "/schedules/cancel/**",
+                                                                "/schedules/registrations/**",
+                                                                "/schedules/guest-payments/**")
                                                 .hasRole("ADMIN")
 
                                                 // Xem lịch + tham gia
@@ -95,6 +98,7 @@ public class SecurityConfig {
 
                                                 .requestMatchers("/guest-payments/**")
                                                 .hasAnyRole("ADMIN", "TREASURER")
+
                                                 // Các route còn lại phải đăng nhập
                                                 .anyRequest()
                                                 .authenticated())

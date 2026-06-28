@@ -1,5 +1,8 @@
 <!doctype html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
   <head>
     <meta charset="UTF-8" />
     <title>Người tham gia</title>
@@ -9,10 +12,11 @@
       rel="stylesheet"
     />
   </head>
+
   <body>
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <div class="container mt-5">
+    <div class="container mt-5 mb-5">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h2>Danh sách người tham gia</h2>
@@ -25,43 +29,372 @@
               th:text="${schedule.playTime != null ? #temporals.format(schedule.playTime, 'dd/MM/yyyy HH:mm') : 'Chưa cập nhật'}"
             ></span>
           </p>
+
+          <p class="text-muted mb-0">
+            <strong>Sân:</strong>
+            <span
+              th:text="${schedule.courtName != null ? schedule.courtName : 'Chưa cập nhật'}"
+            ></span>
+          </p>
         </div>
 
-        <a href="/schedules" class="btn btn-secondary"> Quay lại </a>
+        <a th:href="@{/schedules}" class="btn btn-secondary">Quay lại</a>
       </div>
 
-      <div th:if="${#lists.isEmpty(registrations)}" class="alert alert-info">
-        Chưa có thành viên nào tham gia lịch này.
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <div class="card border-primary shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="text-muted">Tổng người tham gia</h6>
+
+              <h3 class="text-primary mb-0">
+                <span th:text="${totalCount}"></span>
+                /
+                <span th:text="${schedule.maxPlayers}"></span>
+              </h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="card border-success shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="text-muted">Thành viên đăng ký</h6>
+
+              <h3 class="text-success mb-0" th:text="${memberCount}"></h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="card border-warning shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="text-muted">Khách vãng lai</h6>
+
+              <h3 class="text-warning mb-0" th:text="${guestCount}"></h3>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="table-responsive" th:if="${!#lists.isEmpty(registrations)}">
-        <table class="table table-bordered table-striped align-middle">
-          <thead class="table-dark">
-            <tr>
-              <th>STT</th>
-              <th>ID thành viên</th>
-              <th>Họ tên</th>
-              <th>Email</th>
-              <th>Trình độ</th>
-            </tr>
-          </thead>
+      <div
+        th:if="${#lists.isEmpty(registrations) && #lists.isEmpty(guestPayments)}"
+        class="alert alert-info"
+      >
+        Chưa có người tham gia lịch này.
+      </div>
 
-          <tbody>
-            <tr th:each="registration, stat : ${registrations}">
-              <td th:text="${stat.count}"></td>
+      <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-dark text-white">Thành viên đã đăng ký</div>
 
-              <td th:text="${registration.user.id}"></td>
+        <div class="card-body">
+          <div th:if="${#lists.isEmpty(registrations)}" class="text-muted">
+            Chưa có thành viên nào đăng ký lịch này.
+          </div>
 
-              <td th:text="${registration.user.fullName}"></td>
+          <div
+            class="table-responsive"
+            th:if="${!#lists.isEmpty(registrations)}"
+          >
+            <table class="table table-bordered table-striped align-middle mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>STT</th>
+                  <th>Họ tên</th>
+                  <th>Email</th>
+                  <th sec:authorize="hasRole('ADMIN')">Số điện thoại</th>
+                  <th>Giới tính</th>
+                  <th>Trình độ</th>
+                  <th>Điểm danh</th>
+                  <th sec:authorize="hasRole('ADMIN')" width="260">Thao tác</th>
+                </tr>
+              </thead>
 
-              <td th:text="${registration.user.email}"></td>
+              <tbody>
+                <tr th:each="registration, stat : ${registrations}">
+                  <td th:text="${stat.count}"></td>
 
-              <td
-                th:text="${registration.user.level != null ? registration.user.level.displayName : 'Chưa cập nhật'}"
-              ></td>
-            </tr>
-          </tbody>
-        </table>
+                  <td th:text="${registration.user.fullName}"></td>
+
+                  <td th:text="${registration.user.email}"></td>
+
+                  <td
+                    sec:authorize="hasRole('ADMIN')"
+                    th:text="${registration.user.phone != null && !registration.user.phone.isEmpty() ? registration.user.phone : '-'}"
+                  ></td>
+
+                  <td
+                    th:text="${registration.user.gender != null ? registration.user.gender.displayName : 'Chưa cập nhật'}"
+                  ></td>
+
+                  <td
+                    th:text="${registration.user.level != null ? registration.user.level.displayName : 'Chưa cập nhật'}"
+                  ></td>
+
+                  <td>
+                    <span
+                      th:if="${registration.attendanceStatus != null and registration.attendanceStatus.name() == 'PRESENT'}"
+                      class="badge bg-success"
+                    >
+                      Có mặt
+                    </span>
+
+                    <span
+                      th:if="${registration.attendanceStatus != null and registration.attendanceStatus.name() == 'ABSENT'}"
+                      class="badge bg-danger"
+                    >
+                      Vắng
+                    </span>
+
+                    <span
+                      th:if="${registration.attendanceStatus == null or registration.attendanceStatus.name() == 'NOT_MARKED'}"
+                      class="badge bg-secondary"
+                    >
+                      Chưa điểm danh
+                    </span>
+                  </td>
+
+                  <td sec:authorize="hasRole('ADMIN')">
+                    <form
+                      th:action="@{/schedules/registrations/{id}/attendance(id=${registration.id})}"
+                      method="post"
+                      class="d-inline"
+                    >
+                      <input
+                        type="hidden"
+                        name="scheduleId"
+                        th:value="${schedule.id}"
+                      />
+                      <input
+                        type="hidden"
+                        name="attendanceStatus"
+                        value="PRESENT"
+                      />
+
+                      <button type="submit" class="btn btn-success btn-sm mb-1">
+                        Có mặt
+                      </button>
+                    </form>
+
+                    <form
+                      th:action="@{/schedules/registrations/{id}/attendance(id=${registration.id})}"
+                      method="post"
+                      class="d-inline"
+                    >
+                      <input
+                        type="hidden"
+                        name="scheduleId"
+                        th:value="${schedule.id}"
+                      />
+                      <input
+                        type="hidden"
+                        name="attendanceStatus"
+                        value="ABSENT"
+                      />
+
+                      <button type="submit" class="btn btn-danger btn-sm mb-1">
+                        Vắng
+                      </button>
+                    </form>
+
+                    <form
+                      th:action="@{/schedules/registrations/{id}/attendance(id=${registration.id})}"
+                      method="post"
+                      class="d-inline"
+                    >
+                      <input
+                        type="hidden"
+                        name="scheduleId"
+                        th:value="${schedule.id}"
+                      />
+                      <input
+                        type="hidden"
+                        name="attendanceStatus"
+                        value="NOT_MARKED"
+                      />
+
+                      <button
+                        type="submit"
+                        class="btn btn-secondary btn-sm mb-1"
+                      >
+                        Reset
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-header bg-warning text-dark">Khách vãng lai</div>
+
+        <div class="card-body">
+          <div th:if="${#lists.isEmpty(guestPayments)}" class="text-muted">
+            Chưa có khách vãng lai nào trong lịch này.
+          </div>
+
+          <div
+            class="table-responsive"
+            th:if="${!#lists.isEmpty(guestPayments)}"
+          >
+            <table class="table table-bordered table-striped align-middle mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>STT</th>
+                  <th>Tên khách</th>
+                  <th sec:authorize="hasRole('ADMIN')">Số điện thoại</th>
+                  <th>Số tiền</th>
+                  <th>Trạng thái thu phí</th>
+                  <th>Ngày thu</th>
+                  <th>Hình thức</th>
+                  <th>Ghi chú</th>
+                  <th>Điểm danh</th>
+                  <th sec:authorize="hasRole('ADMIN')" width="260">Thao tác</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr th:each="guestPayment, stat : ${guestPayments}">
+                  <td th:text="${stat.count}"></td>
+
+                  <td th:text="${guestPayment.guestName}"></td>
+
+                  <td
+                    sec:authorize="hasRole('ADMIN')"
+                    th:text="${guestPayment.phone != null && !guestPayment.phone.isEmpty() ? guestPayment.phone : '-'}"
+                  ></td>
+
+                  <td
+                    class="fw-bold"
+                    th:text="${#numbers.formatInteger(guestPayment.amount, 0, 'COMMA')} + ' VNĐ'"
+                  ></td>
+
+                  <td>
+                    <span
+                      th:if="${guestPayment.status.name() == 'PAID'}"
+                      class="badge bg-success"
+                    >
+                      Đã thu
+                    </span>
+
+                    <span
+                      th:if="${guestPayment.status.name() == 'UNPAID'}"
+                      class="badge bg-danger"
+                    >
+                      Chưa thu
+                    </span>
+                  </td>
+
+                  <td
+                    th:text="${guestPayment.paidDate != null ? #temporals.format(guestPayment.paidDate, 'dd/MM/yyyy') : '-'}"
+                  ></td>
+
+                  <td
+                    th:text="${guestPayment.paymentMethod != null ? guestPayment.paymentMethod : '-'}"
+                  ></td>
+
+                  <td
+                    th:text="${guestPayment.note != null && !guestPayment.note.isEmpty() ? guestPayment.note : '-'}"
+                  ></td>
+
+                  <td>
+                    <span
+                      th:if="${guestPayment.attendanceStatus != null and guestPayment.attendanceStatus.name() == 'PRESENT'}"
+                      class="badge bg-success"
+                    >
+                      Có mặt
+                    </span>
+
+                    <span
+                      th:if="${guestPayment.attendanceStatus != null and guestPayment.attendanceStatus.name() == 'ABSENT'}"
+                      class="badge bg-danger"
+                    >
+                      Vắng
+                    </span>
+
+                    <span
+                      th:if="${guestPayment.attendanceStatus == null or guestPayment.attendanceStatus.name() == 'NOT_MARKED'}"
+                      class="badge bg-secondary"
+                    >
+                      Chưa điểm danh
+                    </span>
+                  </td>
+
+                  <td sec:authorize="hasRole('ADMIN')">
+                    <form
+                      th:action="@{/schedules/guest-payments/{id}/attendance(id=${guestPayment.id})}"
+                      method="post"
+                      class="d-inline"
+                    >
+                      <input
+                        type="hidden"
+                        name="scheduleId"
+                        th:value="${schedule.id}"
+                      />
+                      <input
+                        type="hidden"
+                        name="attendanceStatus"
+                        value="PRESENT"
+                      />
+
+                      <button type="submit" class="btn btn-success btn-sm mb-1">
+                        Có mặt
+                      </button>
+                    </form>
+
+                    <form
+                      th:action="@{/schedules/guest-payments/{id}/attendance(id=${guestPayment.id})}"
+                      method="post"
+                      class="d-inline"
+                    >
+                      <input
+                        type="hidden"
+                        name="scheduleId"
+                        th:value="${schedule.id}"
+                      />
+                      <input
+                        type="hidden"
+                        name="attendanceStatus"
+                        value="ABSENT"
+                      />
+
+                      <button type="submit" class="btn btn-danger btn-sm mb-1">
+                        Vắng
+                      </button>
+                    </form>
+
+                    <form
+                      th:action="@{/schedules/guest-payments/{id}/attendance(id=${guestPayment.id})}"
+                      method="post"
+                      class="d-inline"
+                    >
+                      <input
+                        type="hidden"
+                        name="scheduleId"
+                        th:value="${schedule.id}"
+                      />
+                      <input
+                        type="hidden"
+                        name="attendanceStatus"
+                        value="NOT_MARKED"
+                      />
+
+                      <button
+                        type="submit"
+                        class="btn btn-secondary btn-sm mb-1"
+                      >
+                        Reset
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 

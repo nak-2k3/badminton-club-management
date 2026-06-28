@@ -1,5 +1,6 @@
 package com.badmintonclub.clubmanagement.entity;
 
+import com.badmintonclub.clubmanagement.entity.enums.AttendanceStatus;
 import com.badmintonclub.clubmanagement.entity.enums.PaymentStatus;
 
 import jakarta.persistence.*;
@@ -42,6 +43,10 @@ public class GuestPayment {
     private LocalDate paidDate;
 
     private String paymentMethod;
+
+    // Trạng thái điểm danh
+    @Enumerated(EnumType.STRING)
+    private AttendanceStatus attendanceStatus = AttendanceStatus.NOT_MARKED;
 
     @Column(length = 500)
     private String note;

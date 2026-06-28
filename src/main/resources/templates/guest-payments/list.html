@@ -29,10 +29,12 @@
         </a>
       </div>
 
-      <div class="mb-4 d-flex justify-content-between align-items-center">
+      <div
+        class="mb-4 d-flex justify-content-between align-items-center gap-3 flex-wrap"
+      >
         <div class="btn-group">
           <a
-            th:href="@{/guest-payments(filter='today', page=0, size=${size})}"
+            th:href="@{/guest-payments(filter='today', page=0)}"
             class="btn"
             th:classappend="${filter == 'today'} ? 'btn-primary' : 'btn-outline-primary'"
           >
@@ -40,7 +42,7 @@
           </a>
 
           <a
-            th:href="@{/guest-payments(filter='month', page=0, size=${size})}"
+            th:href="@{/guest-payments(filter='month', page=0)}"
             class="btn"
             th:classappend="${filter == 'month'} ? 'btn-primary' : 'btn-outline-primary'"
           >
@@ -48,7 +50,7 @@
           </a>
 
           <a
-            th:href="@{/guest-payments(filter='all', page=0, size=${size})}"
+            th:href="@{/guest-payments(filter='all', page=0)}"
             class="btn"
             th:classappend="${filter == 'all'} ? 'btn-primary' : 'btn-outline-primary'"
           >
@@ -57,6 +59,7 @@
         </div>
 
         <form
+          th:if="${filter != 'all'}"
           th:action="@{/guest-payments}"
           method="get"
           class="d-flex align-items-center gap-2"
@@ -64,18 +67,51 @@
           <input type="hidden" name="filter" th:value="${filter}" />
           <input type="hidden" name="page" value="0" />
 
-          <label class="text-muted">Hiển thị</label>
+          <label class="text-muted text-nowrap">Buổi đánh</label>
 
           <select
-            name="size"
+            name="scheduleId"
             class="form-select form-select-sm"
             onchange="this.form.submit()"
+            style="min-width: 280px"
           >
-            <option value="5" th:selected="${size == 5}">5</option>
-            <option value="10" th:selected="${size == 10}">10</option>
-            <option value="25" th:selected="${size == 25}">25</option>
-            <option value="50" th:selected="${size == 50}">50</option>
+            <option value="">Tất cả buổi</option>
+
+            <option
+              th:each="schedule : ${schedulesForFilter}"
+              th:value="${schedule.id}"
+              th:selected="${selectedScheduleId != null and selectedScheduleId == schedule.id}"
+              th:text="${schedule.title + ' - ' + #temporals.format(schedule.playTime, 'dd/MM/yyyy HH:mm')}"
+            ></option>
           </select>
+        </form>
+
+        <form
+          th:if="${filter == 'all'}"
+          th:action="@{/guest-payments}"
+          method="get"
+          class="d-flex align-items-center gap-2"
+        >
+          <input type="hidden" name="filter" value="all" />
+          <input type="hidden" name="page" value="0" />
+
+          <label class="text-muted text-nowrap">Lọc theo ngày</label>
+
+          <input
+            type="date"
+            name="dateKey"
+            class="form-control form-control-sm"
+            th:value="${dateKey}"
+          />
+
+          <button type="submit" class="btn btn-primary btn-sm">Lọc</button>
+
+          <a
+            th:href="@{/guest-payments(filter='all', page=0)}"
+            class="btn btn-outline-secondary btn-sm"
+          >
+            Xóa lọc
+          </a>
         </form>
       </div>
 
@@ -219,6 +255,25 @@
                       method="post"
                       class="d-inline"
                     >
+                      <input type="hidden" name="filter" th:value="${filter}" />
+                      <input
+                        type="hidden"
+                        name="page"
+                        th:value="${currentPage}"
+                      />
+                      <input
+                        th:if="${selectedScheduleId != null}"
+                        type="hidden"
+                        name="scheduleId"
+                        th:value="${selectedScheduleId}"
+                      />
+                      <input
+                        th:if="${dateKey != null and !dateKey.isEmpty()}"
+                        type="hidden"
+                        name="dateKey"
+                        th:value="${dateKey}"
+                      />
+
                       <select
                         name="paymentMethod"
                         class="form-select form-select-sm d-inline w-auto mb-1"
@@ -238,6 +293,25 @@
                       method="post"
                       class="d-inline"
                     >
+                      <input type="hidden" name="filter" th:value="${filter}" />
+                      <input
+                        type="hidden"
+                        name="page"
+                        th:value="${currentPage}"
+                      />
+                      <input
+                        th:if="${selectedScheduleId != null}"
+                        type="hidden"
+                        name="scheduleId"
+                        th:value="${selectedScheduleId}"
+                      />
+                      <input
+                        th:if="${dateKey != null and !dateKey.isEmpty()}"
+                        type="hidden"
+                        name="dateKey"
+                        th:value="${dateKey}"
+                      />
+
                       <button
                         type="submit"
                         class="btn btn-secondary btn-sm mb-1"
@@ -247,7 +321,7 @@
                     </form>
 
                     <a
-                      th:href="@{/guest-payments/delete/{id}(id=${guestPayment.id})}"
+                      th:href="@{/guest-payments/delete/{id}(id=${guestPayment.id}, filter=${filter}, page=${currentPage}, scheduleId=${selectedScheduleId}, dateKey=${dateKey})}"
                       class="btn btn-danger btn-sm mb-1"
                       onclick="
                         return confirm(
@@ -277,7 +351,7 @@
               >
                 <a
                   class="page-link"
-                  th:href="@{/guest-payments(filter=${filter}, page=${currentPage - 1}, size=${size})}"
+                  th:href="@{/guest-payments(filter=${filter}, page=${currentPage - 1}, scheduleId=${selectedScheduleId}, dateKey=${dateKey})}"
                 >
                   Trước
                 </a>
@@ -290,7 +364,7 @@
               >
                 <a
                   class="page-link"
-                  th:href="@{/guest-payments(filter=${filter}, page=${i}, size=${size})}"
+                  th:href="@{/guest-payments(filter=${filter}, page=${i}, scheduleId=${selectedScheduleId}, dateKey=${dateKey})}"
                   th:text="${i + 1}"
                 ></a>
               </li>
@@ -301,7 +375,7 @@
               >
                 <a
                   class="page-link"
-                  th:href="@{/guest-payments(filter=${filter}, page=${currentPage + 1}, size=${size})}"
+                  th:href="@{/guest-payments(filter=${filter}, page=${currentPage + 1}, scheduleId=${selectedScheduleId}, dateKey=${dateKey})}"
                 >
                   Sau
                 </a>

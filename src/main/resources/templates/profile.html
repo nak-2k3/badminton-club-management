@@ -32,7 +32,10 @@
 
           <div class="row mb-3">
             <div class="col-md-3 fw-bold">Số điện thoại:</div>
-            <div class="col-md-9" th:text="${user.phone}"></div>
+            <div
+              class="col-md-9"
+              th:text="${user.phone != null && !user.phone.isEmpty() ? user.phone : 'Chưa cập nhật'}"
+            ></div>
           </div>
 
           <div class="row mb-3">
@@ -114,10 +117,69 @@
         </div>
 
         <div class="card-body">
-          <div class="alert alert-info">
-            Đã đăng ký:
-            <strong th:text="${totalJoined}"></strong>
-            buổi
+          <div class="row g-3 mb-4">
+            <div class="col-md-2">
+              <div class="card border-primary h-100">
+                <div class="card-body text-center">
+                  <h6 class="text-muted">Đã đăng ký</h6>
+                  <h4 class="text-primary mb-0" th:text="${totalJoined}"></h4>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-2">
+              <div class="card border-success h-100">
+                <div class="card-body text-center">
+                  <h6 class="text-muted">Có mặt</h6>
+                  <h4 class="text-success mb-0" th:text="${presentCount}"></h4>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-2">
+              <div class="card border-danger h-100">
+                <div class="card-body text-center">
+                  <h6 class="text-muted">Vắng</h6>
+                  <h4 class="text-danger mb-0" th:text="${absentCount}"></h4>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <div class="card border-secondary h-100">
+                <div class="card-body text-center">
+                  <h6 class="text-muted">Chưa điểm danh</h6>
+                  <h4
+                    class="text-secondary mb-0"
+                    th:text="${notMarkedCount}"
+                  ></h4>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <div class="card border-warning h-100">
+                <div class="card-body text-center">
+                  <h6 class="text-muted">Tỷ lệ có mặt</h6>
+                  <h4 class="text-warning mb-0">
+                    <span th:text="${attendanceRate}"></span>%
+                  </h4>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-bold">Tỷ lệ có mặt</label>
+
+            <div class="progress" style="height: 24px">
+              <div
+                class="progress-bar bg-success"
+                role="progressbar"
+                th:style="'width: ' + ${attendanceRate} + '%'"
+                th:text="${attendanceRate} + '%'"
+              ></div>
+            </div>
           </div>
 
           <div
@@ -139,6 +201,7 @@
                   <th>Sân</th>
                   <th>Thời gian</th>
                   <th>Trạng thái lịch</th>
+                  <th>Điểm danh</th>
                 </tr>
               </thead>
 
@@ -154,12 +217,67 @@
                     th:text="${registration.schedule.playTime != null ? #temporals.format(registration.schedule.playTime, 'dd/MM/yyyy HH:mm') : 'Chưa cập nhật'}"
                   ></td>
 
-                  <td
-                    th:text="${registration.schedule.status != null ? registration.schedule.status.displayName : 'Chưa cập nhật'}"
-                  ></td>
+                  <td>
+                    <span
+                      class="badge bg-success"
+                      th:if="${registration.schedule.status != null and registration.schedule.status.name() == 'OPEN'}"
+                    >
+                      Đang mở
+                    </span>
+
+                    <span
+                      class="badge bg-warning text-dark"
+                      th:if="${registration.schedule.status != null and registration.schedule.status.name() == 'LOCKED'}"
+                    >
+                      Đã khóa đăng ký
+                    </span>
+
+                    <span
+                      class="badge bg-danger"
+                      th:if="${registration.schedule.status != null and registration.schedule.status.name() == 'CANCELLED'}"
+                    >
+                      Đã hủy
+                    </span>
+
+                    <span
+                      class="badge bg-secondary"
+                      th:if="${registration.schedule.status == null}"
+                    >
+                      Chưa cập nhật
+                    </span>
+                  </td>
+
+                  <td>
+                    <span
+                      th:if="${registration.attendanceStatus != null and registration.attendanceStatus.name() == 'PRESENT'}"
+                      class="badge bg-success"
+                    >
+                      Có mặt
+                    </span>
+
+                    <span
+                      th:if="${registration.attendanceStatus != null and registration.attendanceStatus.name() == 'ABSENT'}"
+                      class="badge bg-danger"
+                    >
+                      Vắng
+                    </span>
+
+                    <span
+                      th:if="${registration.attendanceStatus == null or registration.attendanceStatus.name() == 'NOT_MARKED'}"
+                      class="badge bg-secondary"
+                    >
+                      Chưa điểm danh
+                    </span>
+                  </td>
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <div class="alert alert-light border mt-3">
+            <strong>Ghi chú:</strong>
+            Tỷ lệ có mặt được tính theo công thức:
+            <strong>Số buổi có mặt / Tổng số buổi đã đăng ký</strong>.
           </div>
         </div>
       </div>

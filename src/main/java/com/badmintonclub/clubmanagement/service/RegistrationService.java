@@ -3,6 +3,7 @@ package com.badmintonclub.clubmanagement.service;
 import com.badmintonclub.clubmanagement.entity.Registration;
 import com.badmintonclub.clubmanagement.entity.Schedule;
 import com.badmintonclub.clubmanagement.entity.User;
+import com.badmintonclub.clubmanagement.entity.enums.AttendanceStatus;
 import com.badmintonclub.clubmanagement.entity.enums.ScheduleStatus;
 import com.badmintonclub.clubmanagement.repository.GuestPaymentRepository;
 import com.badmintonclub.clubmanagement.repository.RegistrationRepository;
@@ -51,6 +52,7 @@ public class RegistrationService {
 
         registration.setUser(user);
         registration.setSchedule(schedule);
+        registration.setAttendanceStatus(AttendanceStatus.NOT_MARKED);
 
         registrationRepository.save(registration);
 
@@ -117,10 +119,49 @@ public class RegistrationService {
     }
 
     public List<Registration> getRegistrationsByUser(User user) {
-        return registrationRepository.findByUser(user);
+        return registrationRepository.findByUserOrderBySchedulePlayTimeDesc(user);
     }
 
     public int countByUser(User user) {
         return registrationRepository.countByUser(user);
+    }
+
+    public long countPresentByUser(User user) {
+        return registrationRepository.countByUserAndAttendanceStatus(
+                user,
+                AttendanceStatus.PRESENT);
+    }
+
+    public long countAbsentByUser(User user) {
+        return registrationRepository.countByUserAndAttendanceStatus(
+                user,
+                AttendanceStatus.ABSENT);
+    }
+
+    public long countNotMarkedByUser(User user) {
+        return registrationRepository.countNotMarkedOrNullByUser(
+                user,
+                AttendanceStatus.NOT_MARKED);
+    }
+
+    public int calculateAttendanceRate(User user) {
+        int totalJoined = countByUser(user);
+
+        if (totalJoined == 0) {
+            return 0;
+        }
+
+        long presentCount = countPresentByUser(user);
+
+        return (int) Math.round((presentCount * 100.0) / totalJoined);
+    }
+
+    public void markAttendance(Long registrationId, AttendanceStatus attendanceStatus) {
+        Registration registration = registrationRepository.findById(registrationId).orElse(null);
+
+        if (registration != null) {
+            registration.setAttendanceStatus(attendanceStatus);
+            registrationRepository.save(registration);
+        }
     }
 }
