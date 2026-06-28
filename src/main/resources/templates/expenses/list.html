@@ -28,6 +28,71 @@
         </a>
       </div>
 
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-dark text-white">Bộ lọc khoản chi</div>
+
+        <div class="card-body">
+          <form th:action="@{/expenses}" method="get" class="row g-3">
+            <input type="hidden" name="page" value="0" />
+
+            <div class="col-md-3">
+              <label class="form-label">Tháng</label>
+
+              <input
+                type="month"
+                name="monthKey"
+                class="form-control"
+                th:value="${monthKey}"
+              />
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label">Tên khoản chi</label>
+
+              <input
+                type="text"
+                name="keyword"
+                class="form-control"
+                placeholder="Ví dụ: tiền sân, tiền cầu..."
+                th:value="${keyword}"
+              />
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Hình thức</label>
+
+              <select name="paymentMethod" class="form-select">
+                <option value="" th:selected="${paymentMethod == ''}">
+                  Tất cả
+                </option>
+
+                <option
+                  value="Tiền mặt"
+                  th:selected="${paymentMethod == 'Tiền mặt'}"
+                >
+                  Tiền mặt
+                </option>
+
+                <option
+                  value="Chuyển khoản"
+                  th:selected="${paymentMethod == 'Chuyển khoản'}"
+                >
+                  Chuyển khoản
+                </option>
+              </select>
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end gap-2">
+              <button type="submit" class="btn btn-primary w-100">Lọc</button>
+
+              <a th:href="@{/expenses}" class="btn btn-outline-secondary w-100">
+                Xóa
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <div class="row mb-4">
         <div class="col-md-4">
           <div class="card border-danger shadow-sm">
@@ -38,76 +103,140 @@
                 class="text-danger mb-0"
                 th:text="${#numbers.formatInteger(totalExpenseAmount, 0, 'COMMA')} + ' VNĐ'"
               ></h3>
+
+              <div class="text-muted small mt-2">
+                Tổng tiền được tính theo bộ lọc hiện tại.
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <table class="table table-bordered table-striped align-middle">
-        <thead class="table-dark">
-          <tr>
-            <th>STT</th>
-            <th>Tên khoản chi</th>
-            <th>Số tiền</th>
-            <th>Ngày chi</th>
-            <th>Hình thức</th>
-            <th>Ghi chú</th>
-            <th>Hành động</th>
-          </tr>
-        </thead>
+      <div class="card shadow-sm">
+        <div
+          class="card-header bg-dark text-white d-flex justify-content-between"
+        >
+          <span>Danh sách khoản chi</span>
 
-        <tbody>
-          <tr th:each="expense, stat : ${expenses}">
-            <td th:text="${stat.count}"></td>
+          <span>
+            Tổng:
+            <strong th:text="${totalItems}"></strong>
+            khoản chi
+          </span>
+        </div>
 
-            <td>
-              <strong th:text="${expense.title}"></strong>
-            </td>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>STT</th>
+                  <th>Tên khoản chi</th>
+                  <th>Số tiền</th>
+                  <th>Ngày chi</th>
+                  <th>Hình thức</th>
+                  <th>Ghi chú</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
 
-            <td
-              class="text-danger fw-bold"
-              th:text="${#numbers.formatInteger(expense.amount, 0, 'COMMA')} + ' VNĐ'"
-            ></td>
+              <tbody>
+                <tr th:each="expense, stat : ${expenses}">
+                  <td th:text="${currentPage * size + stat.count}"></td>
 
-            <td
-              th:text="${expense.expenseDate != null ? #temporals.format(expense.expenseDate, 'dd/MM/yyyy') : '-'}"
-            ></td>
+                  <td>
+                    <strong th:text="${expense.title}"></strong>
+                  </td>
 
-            <td
-              th:text="${expense.paymentMethod != null && !expense.paymentMethod.isEmpty() ? expense.paymentMethod : '-'}"
-            ></td>
+                  <td
+                    class="text-danger fw-bold"
+                    th:text="${#numbers.formatInteger(expense.amount, 0, 'COMMA')} + ' VNĐ'"
+                  ></td>
 
-            <td
-              th:text="${expense.note != null && !expense.note.isEmpty() ? expense.note : '-'}"
-            ></td>
+                  <td
+                    th:text="${expense.expenseDate != null ? #temporals.format(expense.expenseDate, 'dd/MM/yyyy') : '-'}"
+                  ></td>
 
-            <td>
-              <a
-                th:href="@{/expenses/edit/{id}(id=${expense.id})}"
-                class="btn btn-warning btn-sm"
+                  <td
+                    th:text="${expense.paymentMethod != null && !expense.paymentMethod.isEmpty() ? expense.paymentMethod : '-'}"
+                  ></td>
+
+                  <td
+                    th:text="${expense.note != null && !expense.note.isEmpty() ? expense.note : '-'}"
+                  ></td>
+
+                  <td>
+                    <a
+                      th:href="@{/expenses/edit/{id}(id=${expense.id})}"
+                      class="btn btn-warning btn-sm"
+                    >
+                      Sửa
+                    </a>
+
+                    <a
+                      th:href="@{/expenses/delete/{id}(id=${expense.id}, monthKey=${monthKey}, keyword=${keyword}, paymentMethod=${paymentMethod}, page=${currentPage})}"
+                      class="btn btn-danger btn-sm"
+                      onclick="
+                        return confirm(
+                          'Bạn có chắc muốn xóa khoản chi này không?',
+                        );
+                      "
+                    >
+                      Xóa
+                    </a>
+                  </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(expenses)}">
+                  <td colspan="7" class="text-center text-muted">
+                    Không có khoản chi phù hợp.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <nav th:if="${totalPages > 1}" class="mt-4">
+            <ul class="pagination justify-content-center mb-0">
+              <li
+                class="page-item"
+                th:classappend="${currentPage == 0} ? 'disabled'"
               >
-                Sửa
-              </a>
+                <a
+                  class="page-link"
+                  th:href="@{/expenses(monthKey=${monthKey}, keyword=${keyword}, paymentMethod=${paymentMethod}, page=${currentPage - 1})}"
+                >
+                  Trước
+                </a>
+              </li>
 
-              <a
-                th:href="@{/expenses/delete/{id}(id=${expense.id})}"
-                class="btn btn-danger btn-sm"
-                onclick="
-                  return confirm('Bạn có chắc muốn xóa khoản chi này không?');
-                "
+              <li
+                class="page-item"
+                th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                th:classappend="${i == currentPage} ? 'active'"
               >
-                Xóa
-              </a>
-            </td>
-          </tr>
+                <a
+                  class="page-link"
+                  th:href="@{/expenses(monthKey=${monthKey}, keyword=${keyword}, paymentMethod=${paymentMethod}, page=${i})}"
+                  th:text="${i + 1}"
+                ></a>
+              </li>
 
-          <tr th:if="${#lists.isEmpty(expenses)}">
-            <td colspan="7" class="text-center text-muted">
-              Chưa có khoản chi nào.
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              <li
+                class="page-item"
+                th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'"
+              >
+                <a
+                  class="page-link"
+                  th:href="@{/expenses(monthKey=${monthKey}, keyword=${keyword}, paymentMethod=${paymentMethod}, page=${currentPage + 1})}"
+                >
+                  Sau
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

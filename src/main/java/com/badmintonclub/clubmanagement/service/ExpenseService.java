@@ -4,6 +4,8 @@ import com.badmintonclub.clubmanagement.entity.Expense;
 import com.badmintonclub.clubmanagement.repository.ExpenseRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -17,6 +19,20 @@ public class ExpenseService {
 
     public List<Expense> getAllExpenses() {
         return expenseRepository.findAllByOrderByExpenseDateDesc();
+    }
+
+    public Page<Expense> searchExpenses(
+            LocalDate startDate,
+            LocalDate endDate,
+            String keyword,
+            String paymentMethod,
+            Pageable pageable) {
+        return expenseRepository.searchExpenses(
+                startDate,
+                endDate,
+                keyword,
+                paymentMethod,
+                pageable);
     }
 
     public Expense getExpenseById(Long id) {
@@ -35,12 +51,24 @@ public class ExpenseService {
         return expenseRepository.sumAllAmount();
     }
 
-    // đếm khoản chi
+    public Long getFilteredExpenseAmount(
+            LocalDate startDate,
+            LocalDate endDate,
+            String keyword,
+            String paymentMethod) {
+        return expenseRepository.sumFilteredAmount(
+                startDate,
+                endDate,
+                keyword,
+                paymentMethod);
+    }
+
+    // Đếm khoản chi
     public long countExpenses() {
         return expenseRepository.count();
     }
 
-    // chi thu theo tháng
+    // Thu chi theo tháng
     public List<Expense> getExpensesBetween(
             LocalDate startDate,
             LocalDate endDate) {
