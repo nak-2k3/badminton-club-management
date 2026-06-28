@@ -1,10 +1,14 @@
 package com.badmintonclub.clubmanagement.service;
 
 import com.badmintonclub.clubmanagement.entity.Schedule;
+import com.badmintonclub.clubmanagement.entity.enums.ScheduleStatus;
 import com.badmintonclub.clubmanagement.repository.ScheduleRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.badmintonclub.clubmanagement.entity.enums.ScheduleStatus;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -14,7 +18,25 @@ public class ScheduleService {
     private ScheduleRepository scheduleRepository;
 
     public List<Schedule> getAllSchedules() {
-        return scheduleRepository.findAll();
+        return scheduleRepository.findAllByOrderByPlayTimeDesc();
+    }
+
+    public List<Schedule> getTodaySchedules() {
+        LocalDate today = LocalDate.now();
+
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+
+        return scheduleRepository.findByPlayTimeBetweenOrderByPlayTimeAsc(
+                startOfDay,
+                endOfDay);
+    }
+
+    public List<Schedule> getUpcomingSchedules() {
+        LocalDateTime now = LocalDateTime.now();
+
+        return scheduleRepository.findByPlayTimeGreaterThanEqualOrderByPlayTimeAsc(
+                now);
     }
 
     public Schedule saveSchedule(Schedule schedule) {
@@ -60,7 +82,7 @@ public class ScheduleService {
         }
     }
 
-    // tìm 5 lịch đánh gần nhất
+    // Tìm 5 lịch đánh gần nhất
     public List<Schedule> getLatestSchedules() {
         return scheduleRepository.findTop5ByOrderByPlayTimeDesc();
     }

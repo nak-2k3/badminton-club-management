@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -31,9 +32,25 @@ public class ScheduleController {
         private UserService userService;
 
         @GetMapping("/schedules")
-        public String listSchedules(Model model, Principal principal) {
+        public String listSchedules(
+                        @RequestParam(defaultValue = "today") String filter,
+                        Model model,
+                        Principal principal) {
 
-                var schedules = scheduleService.getAllSchedules();
+                List<Schedule> schedules;
+                String pageTitle;
+
+                if ("upcoming".equals(filter)) {
+                        schedules = scheduleService.getUpcomingSchedules();
+                        pageTitle = "Danh sách lịch đánh sắp tới";
+                } else if ("all".equals(filter)) {
+                        schedules = scheduleService.getAllSchedules();
+                        pageTitle = "Tất cả lịch đánh";
+                } else {
+                        filter = "today";
+                        schedules = scheduleService.getTodaySchedules();
+                        pageTitle = "Danh sách lịch đánh hôm nay";
+                }
 
                 User currentUser = null;
 
@@ -66,6 +83,8 @@ public class ScheduleController {
                 model.addAttribute("schedules", schedules);
                 model.addAttribute("memberCountMap", memberCountMap);
                 model.addAttribute("guestCountMap", guestCountMap);
+                model.addAttribute("filter", filter);
+                model.addAttribute("pageTitle", pageTitle);
 
                 return "schedules/list";
         }
@@ -93,7 +112,7 @@ public class ScheduleController {
 
                 scheduleService.saveSchedule(schedule);
 
-                return "redirect:/schedules";
+                return "redirect:/schedules?filter=today";
         }
 
         @GetMapping("/schedules/register/{id}")

@@ -16,9 +16,11 @@
     <div class="container mt-5 mb-5">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2>Quản lý khách vãng lai</h2>
+          <h2 th:text="${pageTitle}"></h2>
+
           <p class="text-muted mb-0">
-            Theo dõi khách vãng lai tham gia buổi đánh và tình trạng thu phí.
+            Theo dõi khách vãng lai và tình trạng thu phí theo từng khoảng thời
+            gian.
           </p>
         </div>
 
@@ -27,9 +29,59 @@
         </a>
       </div>
 
+      <div class="mb-4 d-flex justify-content-between align-items-center">
+        <div class="btn-group">
+          <a
+            th:href="@{/guest-payments(filter='today', page=0, size=${size})}"
+            class="btn"
+            th:classappend="${filter == 'today'} ? 'btn-primary' : 'btn-outline-primary'"
+          >
+            Hôm nay
+          </a>
+
+          <a
+            th:href="@{/guest-payments(filter='month', page=0, size=${size})}"
+            class="btn"
+            th:classappend="${filter == 'month'} ? 'btn-primary' : 'btn-outline-primary'"
+          >
+            Tháng này
+          </a>
+
+          <a
+            th:href="@{/guest-payments(filter='all', page=0, size=${size})}"
+            class="btn"
+            th:classappend="${filter == 'all'} ? 'btn-primary' : 'btn-outline-primary'"
+          >
+            Tất cả
+          </a>
+        </div>
+
+        <form
+          th:action="@{/guest-payments}"
+          method="get"
+          class="d-flex align-items-center gap-2"
+        >
+          <input type="hidden" name="filter" th:value="${filter}" />
+          <input type="hidden" name="page" value="0" />
+
+          <label class="text-muted">Hiển thị</label>
+
+          <select
+            name="size"
+            class="form-select form-select-sm"
+            onchange="this.form.submit()"
+          >
+            <option value="5" th:selected="${size == 5}">5</option>
+            <option value="10" th:selected="${size == 10}">10</option>
+            <option value="25" th:selected="${size == 25}">25</option>
+            <option value="50" th:selected="${size == 50}">50</option>
+          </select>
+        </form>
+      </div>
+
       <div class="row g-3 mb-4">
         <div class="col-md-4">
-          <div class="card border-primary shadow-sm">
+          <div class="card border-primary shadow-sm h-100">
             <div class="card-body">
               <h6 class="text-muted">Tổng phải thu khách</h6>
 
@@ -42,7 +94,7 @@
         </div>
 
         <div class="col-md-4">
-          <div class="card border-success shadow-sm">
+          <div class="card border-success shadow-sm h-100">
             <div class="card-body">
               <h6 class="text-muted">Đã thu</h6>
 
@@ -55,7 +107,7 @@
         </div>
 
         <div class="col-md-4">
-          <div class="card border-danger shadow-sm">
+          <div class="card border-danger shadow-sm h-100">
             <div class="card-body">
               <h6 class="text-muted">Chưa thu</h6>
 
@@ -68,136 +120,196 @@
         </div>
       </div>
 
-      <table class="table table-bordered table-striped align-middle">
-        <thead class="table-dark">
-          <tr>
-            <th>STT</th>
-            <th>Khách vãng lai</th>
-            <th>Số điện thoại</th>
-            <th>Buổi đánh</th>
-            <th>Số tiền</th>
-            <th>Trạng thái</th>
-            <th>Ngày thu</th>
-            <th>Hình thức</th>
-            <th>Ghi chú</th>
-            <th>Hành động</th>
-          </tr>
-        </thead>
+      <div class="card shadow-sm">
+        <div
+          class="card-header bg-dark text-white d-flex justify-content-between"
+        >
+          <span>Danh sách khách vãng lai</span>
+          <span>
+            Tổng:
+            <strong th:text="${totalItems}"></strong>
+            dòng
+          </span>
+        </div>
 
-        <tbody>
-          <tr th:each="guestPayment, stat : ${guestPayments}">
-            <td th:text="${stat.count}"></td>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>STT</th>
+                  <th>Khách vãng lai</th>
+                  <th>Số điện thoại</th>
+                  <th>Buổi đánh</th>
+                  <th>Số tiền</th>
+                  <th>Trạng thái</th>
+                  <th>Ngày thu</th>
+                  <th>Hình thức</th>
+                  <th>Ghi chú</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
 
-            <td th:text="${guestPayment.guestName}"></td>
+              <tbody>
+                <tr th:each="guestPayment, stat : ${guestPayments}">
+                  <td th:text="${currentPage * size + stat.count}"></td>
 
-            <td
-              th:text="${guestPayment.phone != null && !guestPayment.phone.isEmpty() ? guestPayment.phone : '-'}"
-            ></td>
+                  <td th:text="${guestPayment.guestName}"></td>
 
-            <td>
-              <span
-                th:text="${guestPayment.schedule != null ? guestPayment.schedule.title : '-'}"
-              ></span>
+                  <td
+                    th:text="${guestPayment.phone != null && !guestPayment.phone.isEmpty() ? guestPayment.phone : '-'}"
+                  ></td>
 
-              <div
-                class="text-muted small"
-                th:if="${guestPayment.schedule != null && guestPayment.schedule.playTime != null}"
-                th:text="${#temporals.format(guestPayment.schedule.playTime, 'dd/MM/yyyy HH:mm')}"
-              ></div>
-            </td>
+                  <td>
+                    <span
+                      th:text="${guestPayment.schedule != null ? guestPayment.schedule.title : '-'}"
+                    ></span>
 
-            <td
-              class="fw-bold"
-              th:text="${#numbers.formatInteger(guestPayment.amount, 0, 'COMMA')} + ' VNĐ'"
-            ></td>
+                    <div
+                      class="text-muted small"
+                      th:if="${guestPayment.schedule != null && guestPayment.schedule.playTime != null}"
+                      th:text="${#temporals.format(guestPayment.schedule.playTime, 'dd/MM/yyyy HH:mm')}"
+                    ></div>
+                  </td>
 
-            <td>
-              <span
-                th:if="${guestPayment.status.name() == 'PAID'}"
-                class="badge bg-success"
+                  <td
+                    class="fw-bold"
+                    th:text="${#numbers.formatInteger(guestPayment.amount, 0, 'COMMA')} + ' VNĐ'"
+                  ></td>
+
+                  <td>
+                    <span
+                      th:if="${guestPayment.status.name() == 'PAID'}"
+                      class="badge bg-success"
+                    >
+                      Đã thu
+                    </span>
+
+                    <span
+                      th:if="${guestPayment.status.name() == 'UNPAID'}"
+                      class="badge bg-danger"
+                    >
+                      Chưa thu
+                    </span>
+                  </td>
+
+                  <td
+                    th:text="${guestPayment.paidDate != null ? #temporals.format(guestPayment.paidDate, 'dd/MM/yyyy') : '-'}"
+                  ></td>
+
+                  <td
+                    th:text="${guestPayment.paymentMethod != null ? guestPayment.paymentMethod : '-'}"
+                  ></td>
+
+                  <td
+                    th:text="${guestPayment.note != null && !guestPayment.note.isEmpty() ? guestPayment.note : '-'}"
+                  ></td>
+
+                  <td style="min-width: 260px">
+                    <a
+                      th:href="@{/guest-payments/edit/{id}(id=${guestPayment.id})}"
+                      class="btn btn-warning btn-sm mb-1"
+                    >
+                      Sửa
+                    </a>
+
+                    <form
+                      th:if="${guestPayment.status.name() == 'UNPAID'}"
+                      th:action="@{/guest-payments/paid/{id}(id=${guestPayment.id})}"
+                      method="post"
+                      class="d-inline"
+                    >
+                      <select
+                        name="paymentMethod"
+                        class="form-select form-select-sm d-inline w-auto mb-1"
+                      >
+                        <option value="Tiền mặt">Tiền mặt</option>
+                        <option value="Chuyển khoản">Chuyển khoản</option>
+                      </select>
+
+                      <button type="submit" class="btn btn-success btn-sm mb-1">
+                        Xác nhận đã thu
+                      </button>
+                    </form>
+
+                    <form
+                      th:if="${guestPayment.status.name() == 'PAID'}"
+                      th:action="@{/guest-payments/unpaid/{id}(id=${guestPayment.id})}"
+                      method="post"
+                      class="d-inline"
+                    >
+                      <button
+                        type="submit"
+                        class="btn btn-secondary btn-sm mb-1"
+                      >
+                        Hoàn tác
+                      </button>
+                    </form>
+
+                    <a
+                      th:href="@{/guest-payments/delete/{id}(id=${guestPayment.id})}"
+                      class="btn btn-danger btn-sm mb-1"
+                      onclick="
+                        return confirm(
+                          'Bạn có chắc muốn xóa khách vãng lai này không?',
+                        );
+                      "
+                    >
+                      Xóa
+                    </a>
+                  </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(guestPayments)}">
+                  <td colspan="10" class="text-center text-muted">
+                    Không có khách vãng lai phù hợp.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <nav th:if="${totalPages > 1}" class="mt-4">
+            <ul class="pagination justify-content-center mb-0">
+              <li
+                class="page-item"
+                th:classappend="${currentPage == 0} ? 'disabled'"
               >
-                Đã thu
-              </span>
-
-              <span
-                th:if="${guestPayment.status.name() == 'UNPAID'}"
-                class="badge bg-danger"
-              >
-                Chưa thu
-              </span>
-            </td>
-
-            <td
-              th:text="${guestPayment.paidDate != null ? #temporals.format(guestPayment.paidDate, 'dd/MM/yyyy') : '-'}"
-            ></td>
-
-            <td
-              th:text="${guestPayment.paymentMethod != null ? guestPayment.paymentMethod : '-'}"
-            ></td>
-
-            <td
-              th:text="${guestPayment.note != null && !guestPayment.note.isEmpty() ? guestPayment.note : '-'}"
-            ></td>
-
-            <td style="min-width: 260px">
-              <a
-                th:href="@{/guest-payments/edit/{id}(id=${guestPayment.id})}"
-                class="btn btn-warning btn-sm mb-1"
-              >
-                Sửa
-              </a>
-
-              <form
-                th:if="${guestPayment.status.name() == 'UNPAID'}"
-                th:action="@{/guest-payments/paid/{id}(id=${guestPayment.id})}"
-                method="post"
-                class="d-inline"
-              >
-                <select
-                  name="paymentMethod"
-                  class="form-select form-select-sm d-inline w-auto mb-1"
+                <a
+                  class="page-link"
+                  th:href="@{/guest-payments(filter=${filter}, page=${currentPage - 1}, size=${size})}"
                 >
-                  <option value="Tiền mặt">Tiền mặt</option>
-                  <option value="Chuyển khoản">Chuyển khoản</option>
-                </select>
+                  Trước
+                </a>
+              </li>
 
-                <button type="submit" class="btn btn-success btn-sm mb-1">
-                  Xác nhận đã thu
-                </button>
-              </form>
-
-              <form
-                th:if="${guestPayment.status.name() == 'PAID'}"
-                th:action="@{/guest-payments/unpaid/{id}(id=${guestPayment.id})}"
-                method="post"
-                class="d-inline"
+              <li
+                class="page-item"
+                th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                th:classappend="${i == currentPage} ? 'active'"
               >
-                <button type="submit" class="btn btn-secondary btn-sm mb-1">
-                  Hoàn tác
-                </button>
-              </form>
+                <a
+                  class="page-link"
+                  th:href="@{/guest-payments(filter=${filter}, page=${i}, size=${size})}"
+                  th:text="${i + 1}"
+                ></a>
+              </li>
 
-              <a
-                th:href="@{/guest-payments/delete/{id}(id=${guestPayment.id})}"
-                class="btn btn-danger btn-sm mb-1"
-                onclick="
-                  return confirm(
-                    'Bạn có chắc muốn xóa khách vãng lai này không?',
-                  );
-                "
+              <li
+                class="page-item"
+                th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'"
               >
-                Xóa
-              </a>
-            </td>
-          </tr>
-
-          <tr th:if="${#lists.isEmpty(guestPayments)}">
-            <td colspan="10" class="text-center text-muted">
-              Chưa có khách vãng lai nào.
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                <a
+                  class="page-link"
+                  th:href="@{/guest-payments(filter=${filter}, page=${currentPage + 1}, size=${size})}"
+                >
+                  Sau
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

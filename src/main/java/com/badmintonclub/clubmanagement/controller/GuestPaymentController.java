@@ -8,12 +8,17 @@ import com.badmintonclub.clubmanagement.service.GuestPaymentService;
 import com.badmintonclub.clubmanagement.service.RegistrationService;
 import com.badmintonclub.clubmanagement.service.ScheduleService;
 
-import java.time.LocalDateTime;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.Comparator;
 import java.util.List;
 
@@ -33,18 +38,106 @@ public class GuestPaymentController {
     private RegistrationService registrationService;
 
     @GetMapping("/guest-payments")
-    public String listGuestPayments(Model model) {
+    public String listGuestPayments(
+            @RequestParam(defaultValue = "today") String filter,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
+        if (page < 0) {
+            page = 0;
+        }
 
-        model.addAttribute("guestPayments", guestPaymentService.getAllGuestPayments());
+        if (size != 5 && size != 10 && size != 25 && size != 50) {
+            size = 10;
+        }
 
-        model.addAttribute("totalGuestAmount", guestPaymentService.getTotalGuestAmount());
-        model.addAttribute("paidGuestAmount", guestPaymentService.getPaidGuestAmount());
-        model.addAttribute("unpaidGuestAmount", guestPaymentService.getUnpaidGuestAmount());
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<GuestPayment> guestPaymentPage;
+
+        Long totalGuestAmount;
+        Long paidGuestAmount;
+        Long unpaidGuestAmount;
+
+        String pageTitle;
+
+        if ("month".equals(filter)) {
+            YearMonth currentMonth = YearMonth.now();
+
+            LocalDateTime startDateTime = currentMonth.atDay(1).atStartOfDay();
+            LocalDateTime endDateTime = currentMonth.plusMonths(1).atDay(1).atStartOfDay();
+
+            guestPaymentPage = guestPaymentService.getGuestPaymentsPageBetween(
+                    startDateTime,
+                    endDateTime,
+                    pageable);
+
+            totalGuestAmount = guestPaymentService.getTotalGuestAmountBetween(
+                    startDateTime,
+                    endDateTime);
+
+            paidGuestAmount = guestPaymentService.getPaidGuestAmountBetween(
+                    startDateTime,
+                    endDateTime);
+
+            unpaidGuestAmount = guestPaymentService.getUnpaidGuestAmountBetween(
+                    startDateTime,
+                    endDateTime);
+
+            pageTitle = "Quản lý khách vãng lai tháng này";
+        } else if ("all".equals(filter)) {
+            guestPaymentPage = guestPaymentService.getAllGuestPaymentsPage(pageable);
+
+            totalGuestAmount = guestPaymentService.getTotalGuestAmount();
+            paidGuestAmount = guestPaymentService.getPaidGuestAmount();
+            unpaidGuestAmount = guestPaymentService.getUnpaidGuestAmount();
+
+            pageTitle = "Tất cả khách vãng lai";
+        } else {
+            filter = "today";
+
+            LocalDate today = LocalDate.now();
+
+            LocalDateTime startDateTime = today.atStartOfDay();
+            LocalDateTime endDateTime = today.plusDays(1).atStartOfDay();
+
+            guestPaymentPage = guestPaymentService.getGuestPaymentsPageBetween(
+                    startDateTime,
+                    endDateTime,
+                    pageable);
+
+            totalGuestAmount = guestPaymentService.getTotalGuestAmountBetween(
+                    startDateTime,
+                    endDateTime);
+
+            paidGuestAmount = guestPaymentService.getPaidGuestAmountBetween(
+                    startDateTime,
+                    endDateTime);
+
+            unpaidGuestAmount = guestPaymentService.getUnpaidGuestAmountBetween(
+                    startDateTime,
+                    endDateTime);
+
+            pageTitle = "Quản lý khách vãng lai hôm nay";
+        }
+
+        model.addAttribute("guestPaymentPage", guestPaymentPage);
+        model.addAttribute("guestPayments", guestPaymentPage.getContent());
+
+        model.addAttribute("totalGuestAmount", safeLong(totalGuestAmount));
+        model.addAttribute("paidGuestAmount", safeLong(paidGuestAmount));
+        model.addAttribute("unpaidGuestAmount", safeLong(unpaidGuestAmount));
+
+        model.addAttribute("filter", filter);
+        model.addAttribute("pageTitle", pageTitle);
+        model.addAttribute("currentPage", guestPaymentPage.getNumber());
+        model.addAttribute("totalPages", guestPaymentPage.getTotalPages());
+        model.addAttribute("totalItems", guestPaymentPage.getTotalElements());
+        model.addAttribute("size", size);
 
         return "guest-payments/list";
     }
 
-    // Lịch đang mở, Lịch chưa diễn ra,Lịch chưa đủ người
     @GetMapping("/guest-payments/create")
     public String showCreateForm(Model model) {
 
@@ -172,5 +265,9 @@ public class GuestPaymentController {
         guestPaymentService.deleteGuestPayment(id);
 
         return "redirect:/guest-payments";
+    }
+
+    private Long safeLong(Long value) {
+        return value != null ? value : 0L;
     }
 }

@@ -6,6 +6,8 @@ import com.badmintonclub.clubmanagement.entity.enums.PaymentStatus;
 import com.badmintonclub.clubmanagement.repository.GuestPaymentRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -20,6 +22,20 @@ public class GuestPaymentService {
 
     public List<GuestPayment> getAllGuestPayments() {
         return guestPaymentRepository.findAllByOrderByIdDesc();
+    }
+
+    public Page<GuestPayment> getAllGuestPaymentsPage(Pageable pageable) {
+        return guestPaymentRepository.findAllForPage(pageable);
+    }
+
+    public Page<GuestPayment> getGuestPaymentsPageBetween(
+            LocalDateTime startDateTime,
+            LocalDateTime endDateTime,
+            Pageable pageable) {
+        return guestPaymentRepository.findPageByScheduleTimeBetween(
+                startDateTime,
+                endDateTime,
+                pageable);
     }
 
     public GuestPayment getGuestPaymentById(Long id) {

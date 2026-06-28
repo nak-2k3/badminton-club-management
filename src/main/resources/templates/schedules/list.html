@@ -18,7 +18,13 @@
 
     <div class="container mt-5 mb-5">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Danh sách lịch đánh</h2>
+        <div>
+          <h2 th:text="${pageTitle}"></h2>
+
+          <p class="text-muted mb-0">
+            Mặc định hệ thống hiển thị lịch đánh hôm nay để dễ theo dõi.
+          </p>
+        </div>
 
         <a
           sec:authorize="hasRole('ADMIN')"
@@ -27,6 +33,34 @@
         >
           Tạo lịch
         </a>
+      </div>
+
+      <div class="mb-4">
+        <div class="btn-group">
+          <a
+            th:href="@{/schedules(filter='today')}"
+            class="btn"
+            th:classappend="${filter == 'today'} ? 'btn-primary' : 'btn-outline-primary'"
+          >
+            Hôm nay
+          </a>
+
+          <a
+            th:href="@{/schedules(filter='upcoming')}"
+            class="btn"
+            th:classappend="${filter == 'upcoming'} ? 'btn-primary' : 'btn-outline-primary'"
+          >
+            Sắp tới
+          </a>
+
+          <a
+            th:href="@{/schedules(filter='all')}"
+            class="btn"
+            th:classappend="${filter == 'all'} ? 'btn-primary' : 'btn-outline-primary'"
+          >
+            Tất cả
+          </a>
+        </div>
       </div>
 
       <div th:if="${param.full}" class="alert alert-danger">
@@ -179,7 +213,7 @@
               <td sec:authorize="hasRole('ADMIN')">
                 <a
                   th:href="@{/schedules/edit/{id}(id=${schedule.id})}"
-                  class="btn btn-warning btn-sm"
+                  class="btn btn-warning btn-sm mb-1"
                 >
                   Sửa
                 </a>
@@ -187,7 +221,7 @@
                 <a
                   th:if="${schedule.status != null and schedule.status.name() == 'OPEN'}"
                   th:href="@{/schedules/lock/{id}(id=${schedule.id})}"
-                  class="btn btn-secondary btn-sm"
+                  class="btn btn-secondary btn-sm mb-1"
                   onclick="
                     return confirm('Bạn có chắc muốn khóa đăng ký lịch này?');
                   "
@@ -198,7 +232,7 @@
                 <a
                   th:if="${schedule.status != null and schedule.status.name() == 'LOCKED'}"
                   th:href="@{/schedules/open/{id}(id=${schedule.id})}"
-                  class="btn btn-success btn-sm"
+                  class="btn btn-success btn-sm mb-1"
                   onclick="
                     return confirm('Bạn có chắc muốn mở lại đăng ký lịch này?');
                   "
@@ -209,7 +243,7 @@
                 <a
                   th:if="${schedule.status != null and schedule.status.name() != 'CANCELLED'}"
                   th:href="@{/schedules/cancel/{id}(id=${schedule.id})}"
-                  class="btn btn-danger btn-sm"
+                  class="btn btn-danger btn-sm mb-1"
                   onclick="return confirm('Bạn có chắc muốn hủy lịch này?');"
                 >
                   Hủy
@@ -219,7 +253,7 @@
 
             <tr th:if="${#lists.isEmpty(schedules)}">
               <td colspan="10" class="text-center text-muted">
-                Chưa có lịch đánh nào.
+                Không có lịch đánh phù hợp.
               </td>
             </tr>
           </tbody>

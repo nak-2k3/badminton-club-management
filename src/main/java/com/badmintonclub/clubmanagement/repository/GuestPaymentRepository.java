@@ -4,6 +4,8 @@ import com.badmintonclub.clubmanagement.entity.GuestPayment;
 import com.badmintonclub.clubmanagement.entity.Schedule;
 import com.badmintonclub.clubmanagement.entity.enums.PaymentStatus;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,9 +19,37 @@ public interface GuestPaymentRepository extends JpaRepository<GuestPayment, Long
 
         List<GuestPayment> findBySchedule(Schedule schedule);
 
+        int countBySchedule(Schedule schedule);
+
         long countByStatus(PaymentStatus status);
 
-        int countBySchedule(Schedule schedule);
+        @Query(value = """
+                         SELECT g
+                         FROM GuestPayment g
+                         LEFT JOIN g.schedule s
+                         ORDER BY s.playTime DESC, g.id DESC
+                        """, countQuery = """
+                         SELECT COUNT(g)
+                         FROM GuestPayment g
+                        """)
+        Page<GuestPayment> findAllForPage(Pageable pageable);
+
+        @Query(value = """
+                         SELECT g
+                         FROM GuestPayment g
+                         WHERE g.schedule.playTime >= :startDateTime
+                         AND g.schedule.playTime < :endDateTime
+                         ORDER BY g.schedule.playTime DESC, g.id DESC
+                        """, countQuery = """
+                         SELECT COUNT(g)
+                         FROM GuestPayment g
+                         WHERE g.schedule.playTime >= :startDateTime
+                         AND g.schedule.playTime < :endDateTime
+                        """)
+        Page<GuestPayment> findPageByScheduleTimeBetween(
+                        @Param("startDateTime") LocalDateTime startDateTime,
+                        @Param("endDateTime") LocalDateTime endDateTime,
+                        Pageable pageable);
 
         @Query("SELECT COALESCE(SUM(g.amount), 0) FROM GuestPayment g")
         Long sumAllAmount();
