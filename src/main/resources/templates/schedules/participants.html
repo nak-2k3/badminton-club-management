@@ -216,43 +216,24 @@
                       Trung bình
                     </td>
 
-                    <td>
-                      <span
-                        th:if="${registration.attendanceStatus != null and registration.attendanceStatus.name() == 'PRESENT'}"
-                        class="badge bg-success attendance-badge"
-                      >
-                        Có mặt
-                      </span>
-
-                      <span
-                        th:if="${registration.attendanceStatus != null and registration.attendanceStatus.name() == 'ABSENT'}"
-                        class="badge bg-danger attendance-badge"
-                      >
-                        Vắng
-                      </span>
-
-                      <span
-                        th:if="${registration.attendanceStatus == null or registration.attendanceStatus.name() == 'NOT_MARKED'}"
-                        class="badge bg-secondary attendance-badge"
-                      >
-                        Chưa điểm danh
-                      </span>
+                    <td th:id="'registration-attendance-' + ${registration.id}">
+                      <th:block
+                        th:with="attendanceStatus=${registration.attendanceStatus}"
+                        th:replace="~{fragments/attendance-badge :: badge}"
+                      ></th:block>
                     </td>
 
                     <td sec:authorize="hasRole('ADMIN')">
                       <div class="attendance-actions">
                         <form
                           th:action="@{/schedules/registrations/{id}/attendance(id=${registration.id})}"
-                          method="post"
-                          class="attendance-form"
+                          th:hx-post="@{/schedules/registrations/{id}/attendance(id=${registration.id})}"
+                          th:hx-target="'#registration-attendance-' + ${registration.id}"
+                          hx-swap="innerHTML"
+                          hx-push-url="false"
                           hx-boost="false"
+                          method="post"
                         >
-                          <input
-                            type="hidden"
-                            name="scheduleId"
-                            th:value="${schedule.id}"
-                          />
-
                           <input
                             type="hidden"
                             name="attendanceStatus"
@@ -266,16 +247,13 @@
 
                         <form
                           th:action="@{/schedules/registrations/{id}/attendance(id=${registration.id})}"
-                          method="post"
-                          class="attendance-form"
+                          th:hx-post="@{/schedules/registrations/{id}/attendance(id=${registration.id})}"
+                          th:hx-target="'#registration-attendance-' + ${registration.id}"
+                          hx-swap="innerHTML"
+                          hx-push-url="false"
                           hx-boost="false"
+                          method="post"
                         >
-                          <input
-                            type="hidden"
-                            name="scheduleId"
-                            th:value="${schedule.id}"
-                          />
-
                           <input
                             type="hidden"
                             name="attendanceStatus"
@@ -289,16 +267,13 @@
 
                         <form
                           th:action="@{/schedules/registrations/{id}/attendance(id=${registration.id})}"
-                          method="post"
-                          class="attendance-form"
+                          th:hx-post="@{/schedules/registrations/{id}/attendance(id=${registration.id})}"
+                          th:hx-target="'#registration-attendance-' + ${registration.id}"
+                          hx-swap="innerHTML"
+                          hx-push-url="false"
                           hx-boost="false"
+                          method="post"
                         >
-                          <input
-                            type="hidden"
-                            name="scheduleId"
-                            th:value="${schedule.id}"
-                          />
-
                           <input
                             type="hidden"
                             name="attendanceStatus"
@@ -421,43 +396,24 @@
                       -
                     </td>
 
-                    <td>
-                      <span
-                        th:if="${guestPayment.attendanceStatus != null and guestPayment.attendanceStatus.name() == 'PRESENT'}"
-                        class="badge bg-success attendance-badge"
-                      >
-                        Có mặt
-                      </span>
-
-                      <span
-                        th:if="${guestPayment.attendanceStatus != null and guestPayment.attendanceStatus.name() == 'ABSENT'}"
-                        class="badge bg-danger attendance-badge"
-                      >
-                        Vắng
-                      </span>
-
-                      <span
-                        th:if="${guestPayment.attendanceStatus == null or guestPayment.attendanceStatus.name() == 'NOT_MARKED'}"
-                        class="badge bg-secondary attendance-badge"
-                      >
-                        Chưa điểm danh
-                      </span>
+                    <td th:id="'guest-attendance-' + ${guestPayment.id}">
+                      <th:block
+                        th:with="attendanceStatus=${guestPayment.attendanceStatus}"
+                        th:replace="~{fragments/attendance-badge :: badge}"
+                      ></th:block>
                     </td>
 
                     <td sec:authorize="hasRole('ADMIN')">
                       <div class="attendance-actions">
                         <form
                           th:action="@{/schedules/guest-payments/{id}/attendance(id=${guestPayment.id})}"
-                          method="post"
-                          class="attendance-form"
+                          th:hx-post="@{/schedules/guest-payments/{id}/attendance(id=${guestPayment.id})}"
+                          th:hx-target="'#guest-attendance-' + ${guestPayment.id}"
+                          hx-swap="innerHTML"
+                          hx-push-url="false"
                           hx-boost="false"
+                          method="post"
                         >
-                          <input
-                            type="hidden"
-                            name="scheduleId"
-                            th:value="${schedule.id}"
-                          />
-
                           <input
                             type="hidden"
                             name="attendanceStatus"
@@ -471,16 +427,13 @@
 
                         <form
                           th:action="@{/schedules/guest-payments/{id}/attendance(id=${guestPayment.id})}"
-                          method="post"
-                          class="attendance-form"
+                          th:hx-post="@{/schedules/guest-payments/{id}/attendance(id=${guestPayment.id})}"
+                          th:hx-target="'#guest-attendance-' + ${guestPayment.id}"
+                          hx-swap="innerHTML"
+                          hx-push-url="false"
                           hx-boost="false"
+                          method="post"
                         >
-                          <input
-                            type="hidden"
-                            name="scheduleId"
-                            th:value="${schedule.id}"
-                          />
-
                           <input
                             type="hidden"
                             name="attendanceStatus"
@@ -494,16 +447,13 @@
 
                         <form
                           th:action="@{/schedules/guest-payments/{id}/attendance(id=${guestPayment.id})}"
-                          method="post"
-                          class="attendance-form"
+                          th:hx-post="@{/schedules/guest-payments/{id}/attendance(id=${guestPayment.id})}"
+                          th:hx-target="'#guest-attendance-' + ${guestPayment.id}"
+                          hx-swap="innerHTML"
+                          hx-push-url="false"
                           hx-boost="false"
+                          method="post"
                         >
-                          <input
-                            type="hidden"
-                            name="scheduleId"
-                            th:value="${schedule.id}"
-                          />
-
                           <input
                             type="hidden"
                             name="attendanceStatus"

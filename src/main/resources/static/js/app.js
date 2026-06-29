@@ -2,11 +2,15 @@ if ("scrollRestoration" in history) {
   history.scrollRestoration = "manual";
 }
 
+/* =========================
+   DOM HELPERS
+========================= */
+
 function getMainContent() {
   return document.getElementById("main-content");
 }
 
-function scrollToTop() {
+function scrollMainToTop() {
   const mainContent = getMainContent();
 
   if (mainContent) {
@@ -15,6 +19,26 @@ function scrollToTop() {
 
   window.scrollTo(0, 0);
 }
+
+function addPageLoading() {
+  const mainContent = getMainContent();
+
+  if (mainContent) {
+    mainContent.classList.add("is-page-loading");
+  }
+}
+
+function removePageLoading() {
+  const mainContent = getMainContent();
+
+  if (mainContent) {
+    mainContent.classList.remove("is-page-loading");
+  }
+}
+
+/* =========================
+   NAVBAR
+========================= */
 
 function setActiveNavbar() {
   const currentPath = window.location.pathname;
@@ -39,10 +63,10 @@ function setActiveNavbar() {
         const dropdown = link.closest(".dropdown");
 
         if (dropdown) {
-          const toggle = dropdown.querySelector(".app-nav-link");
+          const dropdownToggle = dropdown.querySelector(".app-nav-link");
 
-          if (toggle) {
-            toggle.classList.add("active");
+          if (dropdownToggle) {
+            dropdownToggle.classList.add("active");
           }
         }
       }
@@ -58,107 +82,100 @@ function closeNavbarMenu() {
   }
 }
 
-function updateAttendanceBadge(form) {
-  const row = form.closest("tr");
-  if (!row) return;
+/* =========================
+   CONFIRM ACTION
+========================= */
 
-  const statusInput = form.querySelector("input[name='attendanceStatus']");
-  if (!statusInput) return;
+function initConfirmActions() {
+  document.querySelectorAll("[data-confirm]").forEach((element) => {
+    if (element.dataset.confirmBound === "true") return;
 
-  const status = statusInput.value;
-  const badge = row.querySelector(".attendance-badge");
-  if (!badge) return;
+    element.dataset.confirmBound = "true";
 
-  badge.classList.remove("bg-success", "bg-danger", "bg-secondary");
+    element.addEventListener("click", function (event) {
+      const message = element.getAttribute("data-confirm");
 
-  if (status === "PRESENT") {
-    badge.classList.add("bg-success");
-    badge.textContent = "Có mặt";
-    return;
-  }
-
-  if (status === "ABSENT") {
-    badge.classList.add("bg-danger");
-    badge.textContent = "Vắng";
-    return;
-  }
-
-  badge.classList.add("bg-secondary");
-  badge.textContent = "Chưa điểm danh";
-}
-
-async function submitAttendanceForm(form) {
-  const submitButton = form.querySelector("button[type='submit']");
-  const originalText = submitButton ? submitButton.textContent : "";
-
-  try {
-    if (submitButton) {
-      submitButton.disabled = true;
-      submitButton.textContent = "...";
-    }
-
-    const response = await fetch(form.action, {
-      method: "POST",
-      body: new FormData(form),
-      credentials: "same-origin",
-      redirect: "follow",
-      headers: {
-        "X-Requested-With": "fetch",
-      },
-    });
-
-    if (!response.ok) {
-      alert("Không thể cập nhật điểm danh. Vui lòng thử lại.");
-      return;
-    }
-
-    updateAttendanceBadge(form);
-  } catch (error) {
-    alert("Có lỗi xảy ra khi cập nhật điểm danh.");
-  } finally {
-    if (submitButton) {
-      submitButton.disabled = false;
-      submitButton.textContent = originalText;
-    }
-  }
-}
-
-function initAttendanceForms() {
-  document.querySelectorAll(".attendance-form").forEach((form) => {
-    if (form.dataset.attendanceBound === "true") return;
-
-    form.dataset.attendanceBound = "true";
-
-    form.addEventListener("submit", function (event) {
-      event.preventDefault();
-      submitAttendanceForm(form);
+      if (message && !confirm(message)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
     });
   });
 }
 
+/* =========================
+   SUBMIT BUTTON LOADING
+========================= */
+
+function initSubmitLoading() {
+  document
+    .querySelectorAll("form[data-disable-submit='true']")
+    .forEach((form) => {
+      if (form.dataset.submitLoadingBound === "true") return;
+
+      form.dataset.submitLoadingBound = "true";
+
+      form.addEventListener("submit", function () {
+        const submitButton = form.querySelector("button[type='submit']");
+
+        if (!submitButton) return;
+
+        submitButton.disabled = true;
+
+        if (!submitButton.dataset.originalText) {
+          submitButton.dataset.originalText = submitButton.innerHTML;
+        }
+
+        submitButton.innerHTML = "Đang xử lý...";
+      });
+    });
+}
+
+/* =========================
+   APP INIT
+========================= */
+
 function initAppUI() {
   setActiveNavbar();
-  initAttendanceForms();
+  initConfirmActions();
+  initSubmitLoading();
 }
+
+/* =========================
+   PAGE LOAD
+========================= */
 
 document.addEventListener("DOMContentLoaded", function () {
   initAppUI();
 });
 
+/* =========================
+   HTMX EVENTS
+========================= */
+
 document.body.addEventListener("htmx:beforeRequest", function () {
   closeNavbarMenu();
+  addPageLoading();
 });
 
 document.body.addEventListener("htmx:afterSwap", function (event) {
   initAppUI();
 
   if (event.detail.target && event.detail.target.id === "main-content") {
-    scrollToTop();
+    scrollMainToTop();
   }
 });
 
-document.body.addEventListener("htmx:afterSettle", function (event) {
-  if (event.detail.target && event.detail.target.id === "main-content") {
-    scrollToTop();
-  }
+document.body.addEventListener("htmx:afterSettle", function () {
+  removePageLoading();
+});
+
+document.body.addEventListener("htmx:responseError", function () {
+  removePageLoading();
+  alert("Có lỗi xảy ra khi xử lý yêu cầu. Vui lòng thử lại.");
+});
+
+document.body.addEventListener("htmx:sendError", function () {
+  removePageLoading();
+  alert("Không thể gửi yêu cầu đến máy chủ. Vui lòng kiểm tra lại kết nối.");
 });

@@ -1,0 +1,27 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <th:block th:fragment="badge">
+      <span
+        th:if="${attendanceStatus != null and attendanceStatus.name() == 'PRESENT'}"
+        class="badge bg-success"
+      >
+        Có mặt
+      </span>
+
+      <span
+        th:if="${attendanceStatus != null and attendanceStatus.name() == 'ABSENT'}"
+        class="badge bg-danger"
+      >
+        Vắng
+      </span>
+
+      <span
+        th:if="${attendanceStatus == null or attendanceStatus.name() == 'NOT_MARKED'}"
+        class="badge bg-secondary"
+      >
+        Chưa điểm danh
+      </span>
+    </th:block>
+  </body>
+</html>

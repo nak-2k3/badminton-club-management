@@ -11,14 +11,11 @@ import com.badmintonclub.clubmanagement.service.UserService;
 import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
@@ -44,7 +41,6 @@ public class ScheduleController {
                         @RequestParam(defaultValue = "today") String filter,
                         Model model,
                         Principal principal) {
-
                 List<Schedule> schedules;
                 String pageTitle;
 
@@ -100,6 +96,7 @@ public class ScheduleController {
         @GetMapping("/schedules/create")
         public String showCreateForm(Model model) {
                 model.addAttribute("schedule", new Schedule());
+
                 return "schedules/create";
         }
 
@@ -107,7 +104,6 @@ public class ScheduleController {
         public String saveSchedule(
                         @Valid @ModelAttribute("schedule") Schedule schedule,
                         BindingResult result) {
-
                 if (result.hasErrors()) {
                         if (schedule.getId() != null) {
                                 return "schedules/edit";
@@ -125,7 +121,6 @@ public class ScheduleController {
         public String registerSchedule(
                         @PathVariable Long id,
                         Principal principal) {
-
                 if (principal == null) {
                         return "redirect:/login";
                 }
@@ -155,7 +150,6 @@ public class ScheduleController {
         public String participants(
                         @PathVariable Long id,
                         Model model) {
-
                 Schedule schedule = scheduleService.getScheduleById(id);
 
                 if (schedule == null) {
@@ -184,7 +178,6 @@ public class ScheduleController {
         public String showEditForm(
                         @PathVariable Long id,
                         Model model) {
-
                 Schedule schedule = scheduleService.getScheduleById(id);
 
                 if (schedule == null) {
@@ -199,18 +192,21 @@ public class ScheduleController {
         @GetMapping("/schedules/cancel/{id}")
         public String cancelSchedule(@PathVariable Long id) {
                 scheduleService.cancelSchedule(id);
+
                 return "redirect:/schedules";
         }
 
         @GetMapping("/schedules/lock/{id}")
         public String lockSchedule(@PathVariable Long id) {
                 scheduleService.lockSchedule(id);
+
                 return "redirect:/schedules";
         }
 
         @GetMapping("/schedules/open/{id}")
         public String openSchedule(@PathVariable Long id) {
                 scheduleService.openSchedule(id);
+
                 return "redirect:/schedules";
         }
 
@@ -218,7 +214,6 @@ public class ScheduleController {
         public String cancelRegistration(
                         @PathVariable Long id,
                         Principal principal) {
-
                 if (principal == null) {
                         return "redirect:/login";
                 }
@@ -232,38 +227,26 @@ public class ScheduleController {
         }
 
         @PostMapping("/schedules/registrations/{id}/attendance")
-        public ResponseEntity<Void> markRegistrationAttendance(
+        public String markRegistrationAttendance(
                         @PathVariable Long id,
                         @RequestParam AttendanceStatus attendanceStatus,
-                        @RequestParam Long scheduleId,
-                        @RequestHeader(value = "X-Requested-With", required = false) String requestedWith) {
+                        Model model) {
                 registrationService.markAttendance(id, attendanceStatus);
 
-                if ("fetch".equals(requestedWith)) {
-                        return ResponseEntity.ok().build();
-                }
+                model.addAttribute("attendanceStatus", attendanceStatus);
 
-                return ResponseEntity
-                                .status(HttpStatus.SEE_OTHER)
-                                .location(URI.create("/schedules/participants/" + scheduleId))
-                                .build();
+                return "fragments/attendance-badge :: badge";
         }
 
         @PostMapping("/schedules/guest-payments/{id}/attendance")
-        public ResponseEntity<Void> markGuestAttendance(
+        public String markGuestAttendance(
                         @PathVariable Long id,
                         @RequestParam AttendanceStatus attendanceStatus,
-                        @RequestParam Long scheduleId,
-                        @RequestHeader(value = "X-Requested-With", required = false) String requestedWith) {
+                        Model model) {
                 guestPaymentService.markAttendance(id, attendanceStatus);
 
-                if ("fetch".equals(requestedWith)) {
-                        return ResponseEntity.ok().build();
-                }
+                model.addAttribute("attendanceStatus", attendanceStatus);
 
-                return ResponseEntity
-                                .status(HttpStatus.SEE_OTHER)
-                                .location(URI.create("/schedules/participants/" + scheduleId))
-                                .build();
+                return "fragments/attendance-badge :: badge";
         }
 }
