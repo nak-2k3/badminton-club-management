@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
   <head>
     <meta charset="UTF-8" />
+
     <title>Thêm thành viên</title>
 
     <link
@@ -13,165 +14,226 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
     />
+
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
   </head>
 
-  <body>
+  <body
+    hx-boost="true"
+    hx-target="#main-content"
+    hx-select="#main-content"
+    hx-push-url="true"
+    hx-swap="innerHTML"
+  >
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <div class="container mt-5 mb-5">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Thêm thành viên</h2>
+    <main id="main-content" class="app-main">
+      <div class="container app-page-container">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Thêm thành viên</h2>
 
-        <a th:href="@{/users}" class="btn btn-secondary">Quay lại</a>
+            <p class="page-subtitle">
+              Tạo tài khoản thành viên mới cho câu lạc bộ cầu lông.
+            </p>
+          </div>
+
+          <div class="page-actions">
+            <a th:href="@{/users}" class="btn btn-outline-secondary">
+              Quay lại
+            </a>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header bg-dark text-white">Thông tin thành viên</div>
+
+          <div class="card-body">
+            <form
+              th:action="@{/users/save}"
+              th:object="${user}"
+              method="post"
+              data-disable-submit="true"
+            >
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">
+                    Họ tên
+                    <span class="text-danger">*</span>
+                  </label>
+
+                  <input
+                    type="text"
+                    th:field="*{fullName}"
+                    class="form-control"
+                    placeholder="Ví dụ: Nguyễn Văn A"
+                  />
+
+                  <div
+                    class="text-danger small mt-1"
+                    th:if="${#fields.hasErrors('fullName')}"
+                    th:errors="*{fullName}"
+                  ></div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">
+                    Email
+                    <span class="text-danger">*</span>
+                  </label>
+
+                  <input
+                    type="email"
+                    th:field="*{email}"
+                    class="form-control"
+                    placeholder="Ví dụ: user@gmail.com"
+                  />
+
+                  <div
+                    class="text-danger small mt-1"
+                    th:if="${#fields.hasErrors('email')}"
+                    th:errors="*{email}"
+                  ></div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Số điện thoại</label>
+                  <input
+                    type="text"
+                    th:field="*{phone}"
+                    class="form-control"
+                    placeholder="Ví dụ: 0901234567"
+                  />
+
+                  <div
+                    class="text-danger small mt-1"
+                    th:if="${#fields.hasErrors('phone')}"
+                    th:errors="*{phone}"
+                  ></div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">
+                    Mật khẩu
+                    <span class="text-danger">*</span>
+                  </label>
+
+                  <input
+                    type="password"
+                    th:field="*{password}"
+                    class="form-control"
+                    placeholder="Nhập mật khẩu"
+                  />
+
+                  <div
+                    class="text-danger small mt-1"
+                    th:if="${#fields.hasErrors('password')}"
+                    th:errors="*{password}"
+                  ></div>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Vai trò</label>
+
+                  <select th:field="*{role}" class="form-select">
+                    <option value="ADMIN">Quản trị viên</option>
+                    <option value="MEMBER">Thành viên</option>
+                    <option value="TREASURER">Thủ quỹ</option>
+                  </select>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Giới tính</label>
+
+                  <select th:field="*{gender}" class="form-select">
+                    <option value="MALE">Nam</option>
+                    <option value="FEMALE">Nữ</option>
+                    <option value="OTHER">Khác</option>
+                  </select>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Trình độ</label>
+
+                  <select th:field="*{level}" class="form-select">
+                    <option value="BEGINNER">Mới bắt đầu</option>
+                    <option value="INTERMEDIATE">Trung bình</option>
+                    <option value="ADVANCED">Nâng cao</option>
+                  </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Ngày sinh</label>
+
+                  <input
+                    type="text"
+                    th:field="*{birthDate}"
+                    class="form-control date-picker"
+                    placeholder="Chọn ngày sinh"
+                    autocomplete="off"
+                  />
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Ngày tham gia CLB</label>
+
+                  <input
+                    type="text"
+                    th:field="*{joinDate}"
+                    class="form-control date-picker"
+                    placeholder="Chọn ngày tham gia CLB"
+                    autocomplete="off"
+                  />
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">Địa chỉ</label>
+
+                  <input
+                    type="text"
+                    th:field="*{address}"
+                    class="form-control"
+                    placeholder="Nhập địa chỉ"
+                  />
+                </div>
+              </div>
+
+              <hr class="my-4" />
+
+              <div class="d-flex justify-content-end gap-2">
+                <a th:href="@{/users}" class="btn btn-outline-secondary">
+                  Hủy
+                </a>
+
+                <button type="submit" class="btn btn-primary">
+                  Lưu thành viên
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
+    </main>
 
-      <form th:action="@{/users/save}" th:object="${user}" method="post">
-        <div class="mb-3">
-          <label class="form-label">Họ tên</label>
-
-          <input
-            type="text"
-            th:field="*{fullName}"
-            class="form-control"
-            placeholder="Ví dụ: Nguyễn Văn A"
-          />
-
-          <div
-            class="text-danger"
-            th:if="${#fields.hasErrors('fullName')}"
-            th:errors="*{fullName}"
-          ></div>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Email</label>
-
-          <input
-            type="email"
-            th:field="*{email}"
-            class="form-control"
-            placeholder="Ví dụ: user@gmail.com"
-          />
-
-          <div
-            class="text-danger"
-            th:if="${#fields.hasErrors('email')}"
-            th:errors="*{email}"
-          ></div>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Password</label>
-
-          <input
-            type="password"
-            th:field="*{password}"
-            class="form-control"
-            placeholder="Nhập mật khẩu"
-          />
-
-          <div
-            class="text-danger"
-            th:if="${#fields.hasErrors('password')}"
-            th:errors="*{password}"
-          ></div>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Số điện thoại</label>
-
-          <input
-            type="text"
-            th:field="*{phone}"
-            class="form-control"
-            placeholder="Ví dụ: 0901234567"
-          />
-
-          <div
-            class="text-danger"
-            th:if="${#fields.hasErrors('phone')}"
-            th:errors="*{phone}"
-          ></div>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Vai trò</label>
-
-          <select th:field="*{role}" class="form-select">
-            <option value="ADMIN">ADMIN</option>
-            <option value="MEMBER">MEMBER</option>
-            <option value="TREASURER">TREASURER</option>
-          </select>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Giới tính</label>
-
-          <select th:field="*{gender}" class="form-select">
-            <option value="MALE">Nam</option>
-            <option value="FEMALE">Nữ</option>
-            <option value="OTHER">Khác</option>
-          </select>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Trình độ</label>
-
-          <select th:field="*{level}" class="form-select">
-            <option value="BEGINNER">Beginner</option>
-            <option value="INTERMEDIATE">Intermediate</option>
-            <option value="ADVANCED">Advanced</option>
-          </select>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Ngày sinh</label>
-
-          <input
-            type="text"
-            th:field="*{birthDate}"
-            class="form-control date-picker"
-            placeholder="Chọn ngày sinh"
-            autocomplete="off"
-          />
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Địa chỉ</label>
-
-          <input
-            type="text"
-            th:field="*{address}"
-            class="form-control"
-            placeholder="Nhập địa chỉ"
-          />
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Ngày tham gia CLB</label>
-
-          <input
-            type="text"
-            th:field="*{joinDate}"
-            class="form-control date-picker"
-            placeholder="Chọn ngày tham gia CLB"
-            autocomplete="off"
-          />
-        </div>
-
-        <button type="submit" class="btn btn-primary">Lưu thành viên</button>
-      </form>
-    </div>
+    <div th:replace="~{fragments/footer :: footer}"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script th:src="@{/js/app.js}"></script>
 
     <script>
-      flatpickr(".date-picker", {
-        dateFormat: "d/m/Y",
-        allowInput: true,
-      });
+      function initDatePicker() {
+        if (window.flatpickr) {
+          flatpickr(".date-picker", {
+            dateFormat: "d/m/Y",
+            allowInput: true,
+          });
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", initDatePicker);
+      document.body.addEventListener("htmx:afterSwap", initDatePicker);
     </script>
   </body>
 </html>
