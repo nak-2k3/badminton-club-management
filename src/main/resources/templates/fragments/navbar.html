@@ -112,7 +112,12 @@
           </ul>
 
           <div sec:authorize="!isAuthenticated()" class="navbar-actions">
-            <a th:href="@{/login}" class="btn btn-outline-light btn-sm">
+            <a
+              sec:authorize="!isAuthenticated()"
+              th:href="@{/login}"
+              class="btn btn-outline-light"
+              hx-boost="false"
+            >
               Đăng nhập
             </a>
           </div>
