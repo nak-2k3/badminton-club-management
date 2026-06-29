@@ -2,390 +2,540 @@
 <html xmlns:th="http://www.thymeleaf.org">
   <head>
     <meta charset="UTF-8" />
+
     <title>Quản lý khách vãng lai</title>
 
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
   </head>
 
-  <body>
+  <body
+    hx-boost="true"
+    hx-target="#main-content"
+    hx-select="#main-content"
+    hx-push-url="true"
+    hx-swap="innerHTML"
+  >
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <div class="container mt-5 mb-5">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h2 th:text="${pageTitle}"></h2>
+    <main id="main-content" class="app-main">
+      <div class="container app-page-container">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title" th:text="${pageTitle}">
+              Quản lý khách vãng lai
+            </h2>
 
-          <p class="text-muted mb-0">
-            Theo dõi khách vãng lai và tình trạng thu phí theo từng khoảng thời
-            gian.
-          </p>
-        </div>
+            <p class="page-subtitle">
+              Theo dõi khách vãng lai và tình trạng thu phí theo từng khoảng
+              thời gian.
+            </p>
+          </div>
 
-        <a th:href="@{/guest-payments/create}" class="btn btn-success">
-          Thêm khách vãng lai
-        </a>
-      </div>
-
-      <div
-        class="mb-4 d-flex justify-content-between align-items-center gap-3 flex-wrap"
-      >
-        <div class="btn-group">
-          <a
-            th:href="@{/guest-payments(filter='today', page=0)}"
-            class="btn"
-            th:classappend="${filter == 'today'} ? 'btn-primary' : 'btn-outline-primary'"
-          >
-            Hôm nay
-          </a>
-
-          <a
-            th:href="@{/guest-payments(filter='month', page=0)}"
-            class="btn"
-            th:classappend="${filter == 'month'} ? 'btn-primary' : 'btn-outline-primary'"
-          >
-            Tháng này
-          </a>
-
-          <a
-            th:href="@{/guest-payments(filter='all', page=0)}"
-            class="btn"
-            th:classappend="${filter == 'all'} ? 'btn-primary' : 'btn-outline-primary'"
-          >
-            Tất cả
-          </a>
-        </div>
-
-        <form
-          th:if="${filter != 'all'}"
-          th:action="@{/guest-payments}"
-          method="get"
-          class="d-flex align-items-center gap-2"
-        >
-          <input type="hidden" name="filter" th:value="${filter}" />
-          <input type="hidden" name="page" value="0" />
-
-          <label class="text-muted text-nowrap">Buổi đánh</label>
-
-          <select
-            name="scheduleId"
-            class="form-select form-select-sm"
-            onchange="this.form.submit()"
-            style="min-width: 280px"
-          >
-            <option value="">Tất cả buổi</option>
-
-            <option
-              th:each="schedule : ${schedulesForFilter}"
-              th:value="${schedule.id}"
-              th:selected="${selectedScheduleId != null and selectedScheduleId == schedule.id}"
-              th:text="${schedule.title + ' - ' + #temporals.format(schedule.playTime, 'dd/MM/yyyy HH:mm')}"
-            ></option>
-          </select>
-        </form>
-
-        <form
-          th:if="${filter == 'all'}"
-          th:action="@{/guest-payments}"
-          method="get"
-          class="d-flex align-items-center gap-2"
-        >
-          <input type="hidden" name="filter" value="all" />
-          <input type="hidden" name="page" value="0" />
-
-          <label class="text-muted text-nowrap">Lọc theo ngày</label>
-
-          <input
-            type="date"
-            name="dateKey"
-            class="form-control form-control-sm"
-            th:value="${dateKey}"
-          />
-
-          <button type="submit" class="btn btn-primary btn-sm">Lọc</button>
-
-          <a
-            th:href="@{/guest-payments(filter='all', page=0)}"
-            class="btn btn-outline-secondary btn-sm"
-          >
-            Xóa lọc
-          </a>
-        </form>
-      </div>
-
-      <div class="row g-3 mb-4">
-        <div class="col-md-4">
-          <div class="card border-primary shadow-sm h-100">
-            <div class="card-body">
-              <h6 class="text-muted">Tổng phải thu khách</h6>
-
-              <h4
-                class="text-primary mb-0"
-                th:text="${#numbers.formatInteger(totalGuestAmount, 0, 'COMMA')} + ' VNĐ'"
-              ></h4>
-            </div>
+          <div class="page-actions">
+            <a th:href="@{/guest-payments/create}" class="btn btn-success">
+              Thêm khách vãng lai
+            </a>
           </div>
         </div>
 
-        <div class="col-md-4">
-          <div class="card border-success shadow-sm h-100">
-            <div class="card-body">
-              <h6 class="text-muted">Đã thu</h6>
+        <div class="card filter-card">
+          <div
+            class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2"
+          >
+            <span>Bộ lọc khách vãng lai</span>
 
-              <h4
-                class="text-success mb-0"
-                th:text="${#numbers.formatInteger(paidGuestAmount, 0, 'COMMA')} + ' VNĐ'"
-              ></h4>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-4">
-          <div class="card border-danger shadow-sm h-100">
-            <div class="card-body">
-              <h6 class="text-muted">Chưa thu</h6>
-
-              <h4
-                class="text-danger mb-0"
-                th:text="${#numbers.formatInteger(unpaidGuestAmount, 0, 'COMMA')} + ' VNĐ'"
-              ></h4>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card shadow-sm">
-        <div
-          class="card-header bg-dark text-white d-flex justify-content-between"
-        >
-          <span>Danh sách khách vãng lai</span>
-          <span>
-            Tổng:
-            <strong th:text="${totalItems}"></strong>
-            dòng
-          </span>
-        </div>
-
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-bordered table-striped align-middle mb-0">
-              <thead class="table-dark">
-                <tr>
-                  <th>STT</th>
-                  <th>Khách vãng lai</th>
-                  <th>Số điện thoại</th>
-                  <th>Buổi đánh</th>
-                  <th>Số tiền</th>
-                  <th>Trạng thái</th>
-                  <th>Ngày thu</th>
-                  <th>Hình thức</th>
-                  <th>Ghi chú</th>
-                  <th>Hành động</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                <tr th:each="guestPayment, stat : ${guestPayments}">
-                  <td th:text="${currentPage * size + stat.count}"></td>
-
-                  <td th:text="${guestPayment.guestName}"></td>
-
-                  <td
-                    th:text="${guestPayment.phone != null && !guestPayment.phone.isEmpty() ? guestPayment.phone : '-'}"
-                  ></td>
-
-                  <td>
-                    <span
-                      th:text="${guestPayment.schedule != null ? guestPayment.schedule.title : '-'}"
-                    ></span>
-
-                    <div
-                      class="text-muted small"
-                      th:if="${guestPayment.schedule != null && guestPayment.schedule.playTime != null}"
-                      th:text="${#temporals.format(guestPayment.schedule.playTime, 'dd/MM/yyyy HH:mm')}"
-                    ></div>
-                  </td>
-
-                  <td
-                    class="fw-bold"
-                    th:text="${#numbers.formatInteger(guestPayment.amount, 0, 'COMMA')} + ' VNĐ'"
-                  ></td>
-
-                  <td>
-                    <span
-                      th:if="${guestPayment.status.name() == 'PAID'}"
-                      class="badge bg-success"
-                    >
-                      Đã thu
-                    </span>
-
-                    <span
-                      th:if="${guestPayment.status.name() == 'UNPAID'}"
-                      class="badge bg-danger"
-                    >
-                      Chưa thu
-                    </span>
-                  </td>
-
-                  <td
-                    th:text="${guestPayment.paidDate != null ? #temporals.format(guestPayment.paidDate, 'dd/MM/yyyy') : '-'}"
-                  ></td>
-
-                  <td
-                    th:text="${guestPayment.paymentMethod != null ? guestPayment.paymentMethod : '-'}"
-                  ></td>
-
-                  <td
-                    th:text="${guestPayment.note != null && !guestPayment.note.isEmpty() ? guestPayment.note : '-'}"
-                  ></td>
-
-                  <td style="min-width: 260px">
-                    <a
-                      th:href="@{/guest-payments/edit/{id}(id=${guestPayment.id})}"
-                      class="btn btn-warning btn-sm mb-1"
-                    >
-                      Sửa
-                    </a>
-
-                    <form
-                      th:if="${guestPayment.status.name() == 'UNPAID'}"
-                      th:action="@{/guest-payments/paid/{id}(id=${guestPayment.id})}"
-                      method="post"
-                      class="d-inline"
-                    >
-                      <input type="hidden" name="filter" th:value="${filter}" />
-                      <input
-                        type="hidden"
-                        name="page"
-                        th:value="${currentPage}"
-                      />
-                      <input
-                        th:if="${selectedScheduleId != null}"
-                        type="hidden"
-                        name="scheduleId"
-                        th:value="${selectedScheduleId}"
-                      />
-                      <input
-                        th:if="${dateKey != null and !dateKey.isEmpty()}"
-                        type="hidden"
-                        name="dateKey"
-                        th:value="${dateKey}"
-                      />
-
-                      <select
-                        name="paymentMethod"
-                        class="form-select form-select-sm d-inline w-auto mb-1"
-                      >
-                        <option value="Tiền mặt">Tiền mặt</option>
-                        <option value="Chuyển khoản">Chuyển khoản</option>
-                      </select>
-
-                      <button type="submit" class="btn btn-success btn-sm mb-1">
-                        Xác nhận đã thu
-                      </button>
-                    </form>
-
-                    <form
-                      th:if="${guestPayment.status.name() == 'PAID'}"
-                      th:action="@{/guest-payments/unpaid/{id}(id=${guestPayment.id})}"
-                      method="post"
-                      class="d-inline"
-                    >
-                      <input type="hidden" name="filter" th:value="${filter}" />
-                      <input
-                        type="hidden"
-                        name="page"
-                        th:value="${currentPage}"
-                      />
-                      <input
-                        th:if="${selectedScheduleId != null}"
-                        type="hidden"
-                        name="scheduleId"
-                        th:value="${selectedScheduleId}"
-                      />
-                      <input
-                        th:if="${dateKey != null and !dateKey.isEmpty()}"
-                        type="hidden"
-                        name="dateKey"
-                        th:value="${dateKey}"
-                      />
-
-                      <button
-                        type="submit"
-                        class="btn btn-secondary btn-sm mb-1"
-                      >
-                        Hoàn tác
-                      </button>
-                    </form>
-
-                    <a
-                      th:href="@{/guest-payments/delete/{id}(id=${guestPayment.id}, filter=${filter}, page=${currentPage}, scheduleId=${selectedScheduleId}, dateKey=${dateKey})}"
-                      class="btn btn-danger btn-sm mb-1"
-                      onclick="
-                        return confirm(
-                          'Bạn có chắc muốn xóa khách vãng lai này không?',
-                        );
-                      "
-                    >
-                      Xóa
-                    </a>
-                  </td>
-                </tr>
-
-                <tr th:if="${#lists.isEmpty(guestPayments)}">
-                  <td colspan="10" class="text-center text-muted">
-                    Không có khách vãng lai phù hợp.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <span class="small">
+              Tổng:
+              <strong th:text="${totalItems}">0</strong>
+              dòng
+            </span>
           </div>
 
-          <nav th:if="${totalPages > 1}" class="mt-4">
-            <ul class="pagination justify-content-center mb-0">
-              <li
-                class="page-item"
-                th:classappend="${currentPage == 0} ? 'disabled'"
-              >
+          <div class="card-body">
+            <div
+              class="d-flex justify-content-between align-items-center gap-3 flex-wrap"
+            >
+              <div class="btn-group flex-wrap" role="group">
                 <a
-                  class="page-link"
-                  th:href="@{/guest-payments(filter=${filter}, page=${currentPage - 1}, scheduleId=${selectedScheduleId}, dateKey=${dateKey})}"
+                  th:href="@{/guest-payments(filter='today', page=0)}"
+                  class="btn"
+                  th:classappend="${filter == 'today'} ? 'btn-primary' : 'btn-outline-primary'"
                 >
-                  Trước
+                  Hôm nay
                 </a>
-              </li>
 
-              <li
-                class="page-item"
-                th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
-                th:classappend="${i == currentPage} ? 'active'"
-              >
                 <a
-                  class="page-link"
-                  th:href="@{/guest-payments(filter=${filter}, page=${i}, scheduleId=${selectedScheduleId}, dateKey=${dateKey})}"
-                  th:text="${i + 1}"
-                ></a>
-              </li>
-
-              <li
-                class="page-item"
-                th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'"
-              >
-                <a
-                  class="page-link"
-                  th:href="@{/guest-payments(filter=${filter}, page=${currentPage + 1}, scheduleId=${selectedScheduleId}, dateKey=${dateKey})}"
+                  th:href="@{/guest-payments(filter='month', page=0)}"
+                  class="btn"
+                  th:classappend="${filter == 'month'} ? 'btn-primary' : 'btn-outline-primary'"
                 >
-                  Sau
+                  Tháng này
                 </a>
-              </li>
-            </ul>
-          </nav>
+
+                <a
+                  th:href="@{/guest-payments(filter='all', page=0)}"
+                  class="btn"
+                  th:classappend="${filter == 'all'} ? 'btn-primary' : 'btn-outline-primary'"
+                >
+                  Tất cả
+                </a>
+              </div>
+
+              <form
+                th:if="${filter != 'all'}"
+                th:action="@{/guest-payments}"
+                method="get"
+                class="d-flex align-items-center gap-2 flex-wrap"
+              >
+                <input type="hidden" name="filter" th:value="${filter}" />
+                <input type="hidden" name="page" value="0" />
+
+                <label class="form-label mb-0 text-muted text-nowrap">
+                  Buổi đánh
+                </label>
+
+                <select
+                  name="scheduleId"
+                  class="form-select form-select-sm"
+                  onchange="this.form.submit()"
+                  style="min-width: 280px"
+                >
+                  <option value="">Tất cả buổi</option>
+
+                  <option
+                    th:each="schedule : ${schedulesForFilter}"
+                    th:value="${schedule.id}"
+                    th:selected="${selectedScheduleId != null and selectedScheduleId == schedule.id}"
+                    th:text="${schedule.title + ' - ' + #temporals.format(schedule.playTime, 'dd/MM/yyyy HH:mm')}"
+                  ></option>
+                </select>
+              </form>
+
+              <form
+                th:if="${filter == 'all'}"
+                th:action="@{/guest-payments}"
+                method="get"
+                class="d-flex align-items-center gap-2 flex-wrap"
+              >
+                <input type="hidden" name="filter" value="all" />
+                <input type="hidden" name="page" value="0" />
+
+                <label class="form-label mb-0 text-muted text-nowrap">
+                  Lọc theo ngày
+                </label>
+
+                <input
+                  type="date"
+                  name="dateKey"
+                  class="form-control form-control-sm"
+                  th:value="${dateKey}"
+                />
+
+                <button type="submit" class="btn btn-primary btn-sm">
+                  Lọc
+                </button>
+
+                <a
+                  th:href="@{/guest-payments(filter='all', page=0)}"
+                  class="btn btn-outline-secondary btn-sm"
+                >
+                  Xóa lọc
+                </a>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="card stat-card border-primary">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="stat-label">Tổng phải thu khách</div>
+
+                    <h4
+                      class="text-primary mb-0 fw-bold"
+                      th:text="${#numbers.formatInteger(totalGuestAmount, 0, 'COMMA')} + ' VNĐ'"
+                    >
+                      0 VNĐ
+                    </h4>
+                  </div>
+
+                  <div class="dashboard-icon bg-primary-subtle text-primary">
+                    💰
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="card stat-card border-success">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="stat-label">Đã thu</div>
+
+                    <h4
+                      class="text-success mb-0 fw-bold"
+                      th:text="${#numbers.formatInteger(paidGuestAmount, 0, 'COMMA')} + ' VNĐ'"
+                    >
+                      0 VNĐ
+                    </h4>
+                  </div>
+
+                  <div class="dashboard-icon bg-success-subtle text-success">
+                    ✅
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="card stat-card border-danger">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="stat-label">Chưa thu</div>
+
+                    <h4
+                      class="text-danger mb-0 fw-bold"
+                      th:text="${#numbers.formatInteger(unpaidGuestAmount, 0, 'COMMA')} + ' VNĐ'"
+                    >
+                      0 VNĐ
+                    </h4>
+                  </div>
+
+                  <div class="dashboard-icon bg-danger-subtle text-danger">
+                    ⏳
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div
+            class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2"
+          >
+            <span>Danh sách khách vãng lai</span>
+
+            <span class="small">
+              Tổng:
+              <strong th:text="${totalItems}">0</strong>
+              dòng
+            </span>
+          </div>
+
+          <div class="card-body">
+            <div class="table-responsive">
+              <table
+                class="table table-bordered table-striped align-middle mb-0"
+              >
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Khách vãng lai</th>
+                    <th>Số điện thoại</th>
+                    <th>Buổi đánh</th>
+                    <th>Số tiền</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày thu</th>
+                    <th>Hình thức</th>
+                    <th>Ghi chú</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr th:each="guestPayment, stat : ${guestPayments}">
+                    <td th:text="${currentPage * size + stat.count}">1</td>
+
+                    <td style="min-width: 170px">
+                      <div
+                        class="d-flex align-items-start justify-content-between gap-2"
+                      >
+                        <div>
+                          <div
+                            class="fw-bold"
+                            th:text="${guestPayment.guestName}"
+                          >
+                            Khách A
+                          </div>
+
+                          <div class="dropdown mt-1">
+                            <button
+                              class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                              type="button"
+                              data-bs-toggle="dropdown"
+                              data-bs-auto-close="outside"
+                              aria-expanded="false"
+                              hx-boost="false"
+                            >
+                              Thao tác
+                            </button>
+
+                            <div
+                              class="dropdown-menu app-dropdown p-2"
+                              style="min-width: 240px"
+                            >
+                              <a
+                                th:href="@{/guest-payments/edit/{id}(id=${guestPayment.id})}"
+                                class="dropdown-item"
+                              >
+                                Sửa thông tin
+                              </a>
+
+                              <form
+                                th:if="${guestPayment.status != null and guestPayment.status.name() == 'UNPAID'}"
+                                th:action="@{/guest-payments/paid/{id}(id=${guestPayment.id})}"
+                                method="post"
+                                class="px-2 py-2"
+                                hx-boost="false"
+                              >
+                                <input
+                                  type="hidden"
+                                  name="filter"
+                                  th:value="${filter}"
+                                />
+
+                                <input
+                                  type="hidden"
+                                  name="page"
+                                  th:value="${currentPage}"
+                                />
+
+                                <input
+                                  th:if="${selectedScheduleId != null}"
+                                  type="hidden"
+                                  name="scheduleId"
+                                  th:value="${selectedScheduleId}"
+                                />
+
+                                <input
+                                  th:if="${dateKey != null and !dateKey.isEmpty()}"
+                                  type="hidden"
+                                  name="dateKey"
+                                  th:value="${dateKey}"
+                                />
+
+                                <label class="form-label small mb-1">
+                                  Hình thức thu
+                                </label>
+
+                                <select
+                                  name="paymentMethod"
+                                  class="form-select form-select-sm mb-2"
+                                >
+                                  <option value="Tiền mặt">Tiền mặt</option>
+                                  <option value="Chuyển khoản">
+                                    Chuyển khoản
+                                  </option>
+                                </select>
+
+                                <button
+                                  type="submit"
+                                  class="btn btn-success btn-sm w-100"
+                                >
+                                  Xác nhận đã thu
+                                </button>
+                              </form>
+
+                              <form
+                                th:if="${guestPayment.status != null and guestPayment.status.name() == 'PAID'}"
+                                th:action="@{/guest-payments/unpaid/{id}(id=${guestPayment.id})}"
+                                method="post"
+                                class="px-2 py-2"
+                                hx-boost="false"
+                              >
+                                <input
+                                  type="hidden"
+                                  name="filter"
+                                  th:value="${filter}"
+                                />
+
+                                <input
+                                  type="hidden"
+                                  name="page"
+                                  th:value="${currentPage}"
+                                />
+
+                                <input
+                                  th:if="${selectedScheduleId != null}"
+                                  type="hidden"
+                                  name="scheduleId"
+                                  th:value="${selectedScheduleId}"
+                                />
+
+                                <input
+                                  th:if="${dateKey != null and !dateKey.isEmpty()}"
+                                  type="hidden"
+                                  name="dateKey"
+                                  th:value="${dateKey}"
+                                />
+
+                                <button
+                                  type="submit"
+                                  class="btn btn-secondary btn-sm w-100"
+                                >
+                                  Hoàn tác thu
+                                </button>
+                              </form>
+
+                              <hr class="dropdown-divider" />
+
+                              <a
+                                th:href="@{/guest-payments/delete/{id}(id=${guestPayment.id}, filter=${filter}, page=${currentPage}, scheduleId=${selectedScheduleId}, dateKey=${dateKey})}"
+                                class="dropdown-item text-danger"
+                                data-confirm="Bạn có chắc muốn xóa khách vãng lai này không?"
+                                hx-boost="false"
+                              >
+                                Xóa khách vãng lai
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td
+                      th:text="${guestPayment.phone != null && !guestPayment.phone.isEmpty() ? guestPayment.phone : '-'}"
+                    >
+                      0900000000
+                    </td>
+
+                    <td>
+                      <span
+                        class="fw-semibold"
+                        th:text="${guestPayment.schedule != null ? guestPayment.schedule.title : '-'}"
+                      >
+                        Lịch đánh
+                      </span>
+
+                      <div
+                        class="text-muted small"
+                        th:if="${guestPayment.schedule != null && guestPayment.schedule.playTime != null}"
+                        th:text="${#temporals.format(guestPayment.schedule.playTime, 'dd/MM/yyyy HH:mm')}"
+                      >
+                        01/01/2026 18:00
+                      </div>
+                    </td>
+
+                    <td
+                      class="fw-bold"
+                      th:text="${#numbers.formatInteger(guestPayment.amount, 0, 'COMMA')} + ' VNĐ'"
+                    >
+                      0 VNĐ
+                    </td>
+
+                    <td>
+                      <span
+                        th:if="${guestPayment.status != null and guestPayment.status.name() == 'PAID'}"
+                        class="badge bg-success"
+                      >
+                        Đã thu
+                      </span>
+
+                      <span
+                        th:if="${guestPayment.status != null and guestPayment.status.name() == 'UNPAID'}"
+                        class="badge bg-danger"
+                      >
+                        Chưa thu
+                      </span>
+
+                      <span
+                        th:if="${guestPayment.status == null}"
+                        class="badge bg-secondary"
+                      >
+                        Chưa cập nhật
+                      </span>
+                    </td>
+
+                    <td
+                      th:text="${guestPayment.paidDate != null ? #temporals.format(guestPayment.paidDate, 'dd/MM/yyyy') : '-'}"
+                    >
+                      -
+                    </td>
+
+                    <td
+                      th:text="${guestPayment.paymentMethod != null ? guestPayment.paymentMethod : '-'}"
+                    >
+                      -
+                    </td>
+
+                    <td
+                      th:text="${guestPayment.note != null && !guestPayment.note.isEmpty() ? guestPayment.note : '-'}"
+                    >
+                      -
+                    </td>
+                  </tr>
+
+                  <tr th:if="${#lists.isEmpty(guestPayments)}">
+                    <td colspan="9" class="text-center text-muted py-4">
+                      Không có khách vãng lai phù hợp.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <nav th:if="${totalPages > 1}" class="mt-4">
+              <ul class="pagination justify-content-center mb-0">
+                <li
+                  class="page-item"
+                  th:classappend="${currentPage == 0} ? 'disabled'"
+                >
+                  <a
+                    class="page-link"
+                    th:href="@{/guest-payments(filter=${filter}, page=${currentPage - 1}, scheduleId=${selectedScheduleId}, dateKey=${dateKey})}"
+                  >
+                    Trước
+                  </a>
+                </li>
+
+                <li
+                  class="page-item"
+                  th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                  th:classappend="${i == currentPage} ? 'active'"
+                >
+                  <a
+                    class="page-link"
+                    th:href="@{/guest-payments(filter=${filter}, page=${i}, scheduleId=${selectedScheduleId}, dateKey=${dateKey})}"
+                    th:text="${i + 1}"
+                  >
+                    1
+                  </a>
+                </li>
+
+                <li
+                  class="page-item"
+                  th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'"
+                >
+                  <a
+                    class="page-link"
+                    th:href="@{/guest-payments(filter=${filter}, page=${currentPage + 1}, scheduleId=${selectedScheduleId}, dateKey=${dateKey})}"
+                  >
+                    Sau
+                  </a>
+                </li>
+              </ul>
+            </nav>
+          </div>
         </div>
       </div>
-    </div>
+    </main>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script th:src="@{/js/app.js}"></script>
   </body>
 </html>
