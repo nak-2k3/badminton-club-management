@@ -2,293 +2,402 @@
 <html xmlns:th="http://www.thymeleaf.org">
   <head>
     <meta charset="UTF-8" />
+
     <title>Danh sách thành viên</title>
 
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
   </head>
 
-  <body>
+  <body
+    hx-boost="true"
+    hx-target="#main-content"
+    hx-select="#main-content"
+    hx-push-url="true"
+    hx-swap="innerHTML"
+  >
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <div class="container mt-5 mb-5">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h2>Danh sách thành viên</h2>
+    <main id="main-content" class="app-main">
+      <div class="container app-page-container">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">Danh sách thành viên</h2>
 
-          <div class="d-flex gap-2 flex-wrap">
-            <span class="badge bg-primary fs-6">
+            <p class="page-subtitle">
+              Quản lý thông tin thành viên, vai trò, trình độ và trạng thái tài
+              khoản.
+            </p>
+          </div>
+
+          <div class="page-actions">
+            <a th:href="@{/users/create}" class="btn btn-success">
+              Thêm thành viên
+            </a>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="card stat-card border-primary">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="stat-label">Tổng thành viên</div>
+
+                    <h3
+                      class="stat-value text-primary"
+                      th:text="${totalAllUsers}"
+                    >
+                      0
+                    </h3>
+                  </div>
+
+                  <div class="dashboard-icon bg-primary-subtle text-primary">
+                    👥
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="card stat-card border-success">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="stat-label">Đang hoạt động</div>
+
+                    <h3
+                      class="stat-value text-success"
+                      th:text="${activeUsers}"
+                    >
+                      0
+                    </h3>
+                  </div>
+
+                  <div class="dashboard-icon bg-success-subtle text-success">
+                    ✅
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="card stat-card border-danger">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="stat-label">Đã khóa</div>
+
+                    <h3 class="stat-value text-danger" th:text="${lockedUsers}">
+                      0
+                    </h3>
+                  </div>
+
+                  <div class="dashboard-icon bg-danger-subtle text-danger">
+                    🔒
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card filter-card">
+          <div class="card-header bg-dark text-white">Bộ lọc thành viên</div>
+
+          <div class="card-body">
+            <form th:action="@{/users}" method="get" class="row g-3">
+              <input type="hidden" name="page" value="0" />
+
+              <div class="col-lg-4 col-md-6">
+                <label class="form-label">Tìm kiếm</label>
+
+                <input
+                  type="text"
+                  name="keyword"
+                  class="form-control"
+                  placeholder="Nhập họ tên, email hoặc số điện thoại..."
+                  th:value="${keyword}"
+                />
+              </div>
+
+              <div class="col-lg-2 col-md-6">
+                <label class="form-label">Vai trò</label>
+
+                <select name="role" class="form-select">
+                  <option value="" th:selected="${role == ''}">Tất cả</option>
+
+                  <option value="ADMIN" th:selected="${role == 'ADMIN'}">
+                    Quản trị viên
+                  </option>
+
+                  <option
+                    value="TREASURER"
+                    th:selected="${role == 'TREASURER'}"
+                  >
+                    Thủ quỹ
+                  </option>
+
+                  <option value="MEMBER" th:selected="${role == 'MEMBER'}">
+                    Thành viên
+                  </option>
+                </select>
+              </div>
+
+              <div class="col-lg-2 col-md-6">
+                <label class="form-label">Trình độ</label>
+
+                <select name="level" class="form-select">
+                  <option value="" th:selected="${level == ''}">Tất cả</option>
+
+                  <option value="BEGINNER" th:selected="${level == 'BEGINNER'}">
+                    Mới bắt đầu
+                  </option>
+
+                  <option
+                    value="INTERMEDIATE"
+                    th:selected="${level == 'INTERMEDIATE'}"
+                  >
+                    Trung bình
+                  </option>
+
+                  <option value="ADVANCED" th:selected="${level == 'ADVANCED'}">
+                    Nâng cao
+                  </option>
+                </select>
+              </div>
+
+              <div class="col-lg-2 col-md-6">
+                <label class="form-label">Trạng thái</label>
+
+                <select name="status" class="form-select">
+                  <option value="" th:selected="${status == ''}">Tất cả</option>
+
+                  <option value="ACTIVE" th:selected="${status == 'ACTIVE'}">
+                    Hoạt động
+                  </option>
+
+                  <option value="LOCKED" th:selected="${status == 'LOCKED'}">
+                    Đã khóa
+                  </option>
+                </select>
+              </div>
+
+              <div class="col-lg-2 col-md-12 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary w-100">Lọc</button>
+
+                <a th:href="@{/users}" class="btn btn-outline-secondary w-100">
+                  Xóa
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="card">
+          <div
+            class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2"
+          >
+            <span>Danh sách thành viên</span>
+
+            <span class="small">
               Tổng:
-              <span th:text="${totalAllUsers}"></span>
-            </span>
-
-            <span class="badge bg-success fs-6">
-              Hoạt động:
-              <span th:text="${activeUsers}"></span>
-            </span>
-
-            <span class="badge bg-danger fs-6">
-              Đã khóa:
-              <span th:text="${lockedUsers}"></span>
+              <strong th:text="${totalItems}">0</strong>
+              thành viên
             </span>
           </div>
-        </div>
 
-        <a th:href="@{/users/create}" class="btn btn-success">
-          Thêm thành viên
-        </a>
-      </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table
+                class="table table-bordered table-striped align-middle mb-0"
+              >
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Thành viên</th>
+                    <th>Email</th>
+                    <th>SĐT</th>
+                    <th>Vai trò</th>
+                    <th>Trình độ</th>
+                    <th>Trạng thái</th>
+                    <th width="190">Hành động</th>
+                  </tr>
+                </thead>
 
-      <div class="card shadow-sm mb-4">
-        <div class="card-header bg-dark text-white">Bộ lọc thành viên</div>
+                <tbody>
+                  <tr th:each="user, stat : ${users}">
+                    <td th:text="${currentPage * size + stat.count}">1</td>
 
-        <div class="card-body">
-          <form th:action="@{/users}" method="get" class="row g-3">
-            <input type="hidden" name="page" value="0" />
+                    <td>
+                      <div class="fw-bold" th:text="${user.fullName}">
+                        Nguyễn Văn A
+                      </div>
 
-            <div class="col-md-4">
-              <label class="form-label">Tìm kiếm</label>
+                      <div class="text-muted small">
+                        <span
+                          th:text="${user.gender != null ? user.gender.displayName : 'Chưa cập nhật'}"
+                        >
+                          Nam
+                        </span>
 
-              <input
-                type="text"
-                name="keyword"
-                class="form-control"
-                placeholder="Nhập họ tên, email hoặc số điện thoại..."
-                th:value="${keyword}"
-              />
+                        <span> - </span>
+
+                        <span
+                          th:text="${user.joinDate != null ? #temporals.format(user.joinDate, 'dd/MM/yyyy') : 'Chưa có ngày tham gia'}"
+                        >
+                          01/01/2026
+                        </span>
+                      </div>
+                    </td>
+
+                    <td th:text="${user.email}">email@gmail.com</td>
+
+                    <td
+                      th:text="${user.phone != null && !user.phone.isEmpty() ? user.phone : 'Chưa cập nhật'}"
+                    >
+                      0900000000
+                    </td>
+
+                    <td>
+                      <span
+                        th:if="${user.role != null and user.role.name() == 'ADMIN'}"
+                        class="badge bg-primary"
+                      >
+                        Quản trị viên
+                      </span>
+
+                      <span
+                        th:if="${user.role != null and user.role.name() == 'TREASURER'}"
+                        class="badge bg-warning text-dark"
+                      >
+                        Thủ quỹ
+                      </span>
+
+                      <span
+                        th:if="${user.role != null and user.role.name() == 'MEMBER'}"
+                        class="badge bg-secondary"
+                      >
+                        Thành viên
+                      </span>
+
+                      <span th:if="${user.role == null}" class="text-muted">
+                        Chưa cập nhật
+                      </span>
+                    </td>
+
+                    <td
+                      th:text="${user.level != null ? user.level.displayName : 'Chưa cập nhật'}"
+                    >
+                      Trung bình
+                    </td>
+
+                    <td>
+                      <span th:if="${user.enabled}" class="badge bg-success">
+                        Hoạt động
+                      </span>
+
+                      <span th:unless="${user.enabled}" class="badge bg-danger">
+                        Đã khóa
+                      </span>
+                    </td>
+
+                    <td>
+                      <div class="btn-action-group">
+                        <a
+                          th:href="@{/users/edit/{id}(id=${user.id})}"
+                          class="btn btn-warning btn-sm"
+                        >
+                          Sửa
+                        </a>
+
+                        <a
+                          th:if="${user.enabled}"
+                          th:href="@{/users/lock/{id}(id=${user.id}, keyword=${keyword}, role=${role}, level=${level}, status=${status}, page=${currentPage})}"
+                          class="btn btn-danger btn-sm"
+                          data-confirm="Bạn có chắc muốn khóa tài khoản này?"
+                        >
+                          Khóa
+                        </a>
+
+                        <a
+                          th:unless="${user.enabled}"
+                          th:href="@{/users/unlock/{id}(id=${user.id}, keyword=${keyword}, role=${role}, level=${level}, status=${status}, page=${currentPage})}"
+                          class="btn btn-success btn-sm"
+                          data-confirm="Bạn có chắc muốn mở khóa tài khoản này?"
+                        >
+                          Mở khóa
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr th:if="${#lists.isEmpty(users)}">
+                    <td colspan="8" class="text-center text-muted py-4">
+                      Không có thành viên phù hợp.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            <div class="col-md-2">
-              <label class="form-label">Vai trò</label>
-
-              <select name="role" class="form-select">
-                <option value="" th:selected="${role == ''}">Tất cả</option>
-
-                <option value="ADMIN" th:selected="${role == 'ADMIN'}">
-                  Quản trị viên
-                </option>
-
-                <option value="TREASURER" th:selected="${role == 'TREASURER'}">
-                  Thủ quỹ
-                </option>
-
-                <option value="MEMBER" th:selected="${role == 'MEMBER'}">
-                  Thành viên
-                </option>
-              </select>
-            </div>
-
-            <div class="col-md-2">
-              <label class="form-label">Trình độ</label>
-
-              <select name="level" class="form-select">
-                <option value="" th:selected="${level == ''}">Tất cả</option>
-
-                <option value="BEGINNER" th:selected="${level == 'BEGINNER'}">
-                  Mới bắt đầu
-                </option>
-
-                <option
-                  value="INTERMEDIATE"
-                  th:selected="${level == 'INTERMEDIATE'}"
+            <nav th:if="${totalPages > 1}" class="mt-4">
+              <ul class="pagination justify-content-center mb-0">
+                <li
+                  class="page-item"
+                  th:classappend="${currentPage == 0} ? 'disabled'"
                 >
-                  Trung bình
-                </option>
+                  <a
+                    class="page-link"
+                    th:href="@{/users(keyword=${keyword}, role=${role}, level=${level}, status=${status}, page=${currentPage - 1})}"
+                  >
+                    Trước
+                  </a>
+                </li>
 
-                <option value="ADVANCED" th:selected="${level == 'ADVANCED'}">
-                  Nâng cao
-                </option>
-              </select>
-            </div>
+                <li
+                  class="page-item"
+                  th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                  th:classappend="${i == currentPage} ? 'active'"
+                >
+                  <a
+                    class="page-link"
+                    th:href="@{/users(keyword=${keyword}, role=${role}, level=${level}, status=${status}, page=${i})}"
+                    th:text="${i + 1}"
+                  >
+                    1
+                  </a>
+                </li>
 
-            <div class="col-md-2">
-              <label class="form-label">Trạng thái</label>
-
-              <select name="status" class="form-select">
-                <option value="" th:selected="${status == ''}">Tất cả</option>
-
-                <option value="ACTIVE" th:selected="${status == 'ACTIVE'}">
-                  Hoạt động
-                </option>
-
-                <option value="LOCKED" th:selected="${status == 'LOCKED'}">
-                  Đã khóa
-                </option>
-              </select>
-            </div>
-
-            <div class="col-md-2 d-flex align-items-end gap-2">
-              <button type="submit" class="btn btn-primary w-100">Lọc</button>
-
-              <a th:href="@{/users}" class="btn btn-outline-secondary w-100">
-                Xóa
-              </a>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <div class="card shadow-sm">
-        <div
-          class="card-header bg-dark text-white d-flex justify-content-between"
-        >
-          <span>Danh sách thành viên</span>
-
-          <span>
-            Tổng:
-            <strong th:text="${totalItems}"></strong>
-            thành viên
-          </span>
-        </div>
-
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-bordered table-striped align-middle mb-0">
-              <thead class="table-dark">
-                <tr>
-                  <th>STT</th>
-                  <th>Họ tên</th>
-                  <th>Email</th>
-                  <th>SĐT</th>
-                  <th>Vai trò</th>
-                  <th>Trình độ</th>
-                  <th>Trạng thái</th>
-                  <th width="190">Hành động</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                <tr th:each="user, stat : ${users}">
-                  <td th:text="${currentPage * size + stat.count}"></td>
-
-                  <td>
-                    <strong th:text="${user.fullName}"></strong>
-
-                    <div class="text-muted small">
-                      <span
-                        th:text="${user.gender != null ? user.gender.displayName : 'Chưa cập nhật'}"
-                      ></span>
-
-                      <span> - </span>
-
-                      <span
-                        th:text="${user.joinDate != null ? #temporals.format(user.joinDate, 'dd/MM/yyyy') : 'Chưa có ngày tham gia'}"
-                      ></span>
-                    </div>
-                  </td>
-
-                  <td th:text="${user.email}"></td>
-
-                  <td
-                    th:text="${user.phone != null && !user.phone.isEmpty() ? user.phone : 'Chưa cập nhật'}"
-                  ></td>
-
-                  <td
-                    th:text="${user.role != null ? user.role.displayName : 'Chưa cập nhật'}"
-                  ></td>
-
-                  <td
-                    th:text="${user.level != null ? user.level.displayName : 'Chưa cập nhật'}"
-                  ></td>
-
-                  <td>
-                    <span th:if="${user.enabled}" class="badge bg-success">
-                      Hoạt động
-                    </span>
-
-                    <span th:unless="${user.enabled}" class="badge bg-danger">
-                      Đã khóa
-                    </span>
-                  </td>
-
-                  <td>
-                    <a
-                      th:href="@{/users/edit/{id}(id=${user.id})}"
-                      class="btn btn-warning btn-sm mb-1"
-                    >
-                      Sửa
-                    </a>
-
-                    <a
-                      th:if="${user.enabled}"
-                      th:href="@{/users/lock/{id}(id=${user.id}, keyword=${keyword}, role=${role}, level=${level}, status=${status}, page=${currentPage})}"
-                      class="btn btn-danger btn-sm mb-1"
-                      onclick="
-                        return confirm('Bạn có chắc muốn khóa tài khoản này?');
-                      "
-                    >
-                      Khóa
-                    </a>
-
-                    <a
-                      th:unless="${user.enabled}"
-                      th:href="@{/users/unlock/{id}(id=${user.id}, keyword=${keyword}, role=${role}, level=${level}, status=${status}, page=${currentPage})}"
-                      class="btn btn-success btn-sm mb-1"
-                      onclick="
-                        return confirm(
-                          'Bạn có chắc muốn mở khóa tài khoản này?',
-                        );
-                      "
-                    >
-                      Mở khóa
-                    </a>
-                  </td>
-                </tr>
-
-                <tr th:if="${#lists.isEmpty(users)}">
-                  <td colspan="8" class="text-center text-muted">
-                    Không có thành viên phù hợp.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                <li
+                  class="page-item"
+                  th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'"
+                >
+                  <a
+                    class="page-link"
+                    th:href="@{/users(keyword=${keyword}, role=${role}, level=${level}, status=${status}, page=${currentPage + 1})}"
+                  >
+                    Sau
+                  </a>
+                </li>
+              </ul>
+            </nav>
           </div>
-
-          <nav th:if="${totalPages > 1}" class="mt-4">
-            <ul class="pagination justify-content-center mb-0">
-              <li
-                class="page-item"
-                th:classappend="${currentPage == 0} ? 'disabled'"
-              >
-                <a
-                  class="page-link"
-                  th:href="@{/users(keyword=${keyword}, role=${role}, level=${level}, status=${status}, page=${currentPage - 1})}"
-                >
-                  Trước
-                </a>
-              </li>
-
-              <li
-                class="page-item"
-                th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
-                th:classappend="${i == currentPage} ? 'active'"
-              >
-                <a
-                  class="page-link"
-                  th:href="@{/users(keyword=${keyword}, role=${role}, level=${level}, status=${status}, page=${i})}"
-                  th:text="${i + 1}"
-                ></a>
-              </li>
-
-              <li
-                class="page-item"
-                th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'"
-              >
-                <a
-                  class="page-link"
-                  th:href="@{/users(keyword=${keyword}, role=${role}, level=${level}, status=${status}, page=${currentPage + 1})}"
-                >
-                  Sau
-                </a>
-              </li>
-            </ul>
-          </nav>
         </div>
       </div>
-    </div>
+    </main>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script th:src="@{/js/app.js}"></script>
   </body>
 </html>
