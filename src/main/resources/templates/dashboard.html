@@ -15,118 +15,67 @@
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
     <div class="container mt-5 mb-5">
-      <!-- Header -->
       <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h2 class="mb-1">Dashboard quản lý CLB Cầu lông</h2>
           <p class="text-muted mb-0">
-            Tổng quan thành viên, lịch đánh, thu chi và quỹ hiện có của câu lạc
-            bộ.
+            Tổng quan nhanh tình hình hoạt động, lịch đánh và tài chính của câu
+            lạc bộ.
           </p>
         </div>
-      </div>
 
-      <!-- Tổng quan CLB -->
-      <h4 class="mb-3">Tổng quan câu lạc bộ</h4>
-
-      <div class="row g-3 mb-5">
-        <div class="col-md-6 col-xl">
-          <div class="card text-bg-primary h-100 shadow-sm">
-            <div class="card-body">
-              <h6 class="card-title">Tổng thành viên</h6>
-              <h2 class="mb-0" th:text="${totalUsers}"></h2>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-6 col-xl">
-          <div class="card text-bg-success h-100 shadow-sm">
-            <div class="card-body">
-              <h6 class="card-title">Đang hoạt động</h6>
-              <h2 class="mb-0" th:text="${activeUsers}"></h2>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-6 col-xl">
-          <div class="card text-bg-danger h-100 shadow-sm">
-            <div class="card-body">
-              <h6 class="card-title">Tài khoản bị khóa</h6>
-              <h2 class="mb-0" th:text="${lockedUsers}"></h2>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-6 col-xl">
-          <div class="card text-bg-warning h-100 shadow-sm">
-            <div class="card-body">
-              <h6 class="card-title">Tổng lịch đánh</h6>
-              <h2 class="mb-0" th:text="${totalSchedules}"></h2>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-6 col-xl">
-          <div class="card text-bg-info h-100 shadow-sm">
-            <div class="card-body">
-              <h6 class="card-title">Tổng lượt đăng ký</h6>
-              <h2 class="mb-0" th:text="${totalRegistrations}"></h2>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Thống kê tài chính -->
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">Thống kê tài chính</h4>
-
-        <div>
-          <a th:href="@{/payments}" class="btn btn-outline-primary btn-sm">
-            Quản lý khoản thu
-          </a>
-
-          <a th:href="@{/expenses}" class="btn btn-outline-danger btn-sm">
-            Quản lý khoản chi
-          </a>
-        </div>
+        <a th:href="@{/reports/finance}" class="btn btn-primary">
+          Xem báo cáo thu chi
+        </a>
       </div>
 
       <div class="row g-3 mb-4">
         <div class="col-md-3">
-          <div class="card border-primary h-100 shadow-sm">
-            <div class="card-body">
-              <h6 class="text-muted">Tổng tiền phải thu</h6>
-
-              <h3
-                class="text-primary mb-0"
-                th:text="${#numbers.formatInteger(totalPaymentAmount, 0, 'COMMA')} + ' VNĐ'"
-              ></h3>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-3">
           <div class="card border-success h-100 shadow-sm">
             <div class="card-body">
-              <h6 class="text-muted">Tổng tiền đã thu</h6>
+              <h6 class="text-muted">Thành viên hoạt động</h6>
 
-              <h3
-                class="text-success mb-0"
-                th:text="${#numbers.formatInteger(paidPaymentAmount, 0, 'COMMA')} + ' VNĐ'"
-              ></h3>
+              <h3 class="text-success mb-1" th:text="${activeUsers}"></h3>
+
+              <div class="text-muted small">
+                Tổng:
+                <strong th:text="${totalUsers}"></strong>
+                thành viên
+              </div>
             </div>
           </div>
         </div>
 
         <div class="col-md-3">
-          <div class="card border-danger h-100 shadow-sm">
+          <div class="card border-primary h-100 shadow-sm">
             <div class="card-body">
-              <h6 class="text-muted">Tổng tiền đã chi</h6>
+              <h6 class="text-muted">Lịch đánh hôm nay</h6>
 
               <h3
-                class="text-danger mb-0"
-                th:text="${#numbers.formatInteger(totalExpenseAmount, 0, 'COMMA')} + ' VNĐ'"
+                class="text-primary mb-1"
+                th:text="${todaySchedulesCount}"
               ></h3>
+
+              <div class="text-muted small">
+                Buổi đánh cần theo dõi trong ngày
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="card border-warning h-100 shadow-sm">
+            <div class="card-body">
+              <h6 class="text-muted">Khách vãng lai hôm nay</h6>
+
+              <h3 class="text-warning mb-1" th:text="${todayGuestCount}"></h3>
+
+              <div class="text-muted small">
+                Đã thu:
+                <strong
+                  th:text="${#numbers.formatInteger(todayGuestPaidAmount, 0, 'COMMA')} + ' VNĐ'"
+                ></strong>
+              </div>
             </div>
           </div>
         </div>
@@ -137,111 +86,247 @@
               <h6 class="text-muted">Quỹ hiện có</h6>
 
               <h3
-                class="mb-0"
+                class="mb-1"
                 th:classappend="${currentFund >= 0} ? 'text-dark' : 'text-danger'"
                 th:text="${#numbers.formatInteger(currentFund, 0, 'COMMA')} + ' VNĐ'"
               ></h3>
+
+              <div class="text-muted small">
+                Tính theo tổng đã thu - tổng đã chi
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <h4 class="mb-3">
+        Tài chính tháng
+        <span th:text="${month}"></span>
+      </h4>
 
       <div class="row g-3 mb-5">
-        <div class="col-md-4">
-          <div class="card h-100 shadow-sm">
-            <div
-              class="card-body d-flex justify-content-between align-items-center"
-            >
-              <div>
-                <h6 class="text-muted mb-1">Số khoản đã đóng</h6>
-                <h3
-                  class="text-success mb-0"
-                  th:text="${paidPaymentCount}"
-                ></h3>
-              </div>
+        <div class="col-md-3">
+          <div class="card border-success h-100 shadow-sm">
+            <div class="card-body">
+              <h6 class="text-muted">Đã thu trong tháng</h6>
 
-              <span class="badge bg-success fs-6">Đã thu</span>
+              <h4
+                class="text-success mb-0"
+                th:text="${#numbers.formatInteger(monthPaidAmount, 0, 'COMMA')} + ' VNĐ'"
+              ></h4>
             </div>
           </div>
         </div>
 
-        <div class="col-md-4">
-          <div class="card h-100 shadow-sm">
-            <div
-              class="card-body d-flex justify-content-between align-items-center"
-            >
-              <div>
-                <h6 class="text-muted mb-1">Số khoản chưa đóng</h6>
-                <h3
-                  class="text-danger mb-0"
-                  th:text="${unpaidPaymentCount}"
-                ></h3>
-              </div>
+        <div class="col-md-3">
+          <div class="card border-danger h-100 shadow-sm">
+            <div class="card-body">
+              <h6 class="text-muted">Chưa thu trong tháng</h6>
 
-              <span class="badge bg-danger fs-6">Còn thiếu</span>
+              <h4
+                class="text-danger mb-0"
+                th:text="${#numbers.formatInteger(monthUnpaidAmount, 0, 'COMMA')} + ' VNĐ'"
+              ></h4>
             </div>
           </div>
         </div>
 
-        <div class="col-md-4">
-          <div class="card h-100 shadow-sm">
-            <div
-              class="card-body d-flex justify-content-between align-items-center"
-            >
-              <div>
-                <h6 class="text-muted mb-1">Số khoản chi</h6>
-                <h3 class="text-warning mb-0" th:text="${totalExpenses}"></h3>
-              </div>
+        <div class="col-md-3">
+          <div class="card border-danger h-100 shadow-sm">
+            <div class="card-body">
+              <h6 class="text-muted">Đã chi trong tháng</h6>
 
-              <span class="badge bg-warning text-dark fs-6">Đã chi</span>
+              <h4
+                class="text-danger mb-0"
+                th:text="${#numbers.formatInteger(monthExpenseAmount, 0, 'COMMA')} + ' VNĐ'"
+              ></h4>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="card border-primary h-100 shadow-sm">
+            <div class="card-body">
+              <h6 class="text-muted">Chênh lệch tháng</h6>
+
+              <h4
+                class="mb-0"
+                th:classappend="${monthBalance >= 0} ? 'text-primary' : 'text-danger'"
+                th:text="${#numbers.formatInteger(monthBalance, 0, 'COMMA')} + ' VNĐ'"
+              ></h4>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Lịch đánh gần nhất -->
-      <div class="card shadow-sm">
-        <div class="card-header bg-dark text-white">5 lịch đánh gần nhất</div>
+      <div class="row g-4">
+        <div class="col-lg-7">
+          <div class="card shadow-sm h-100">
+            <div
+              class="card-header bg-dark text-white d-flex justify-content-between align-items-center"
+            >
+              <span>Lịch đánh hôm nay</span>
 
-        <div class="card-body">
-          <table class="table table-bordered table-striped align-middle mb-0">
-            <thead class="table-dark">
-              <tr>
-                <th>STT</th>
-                <th>Tiêu đề</th>
-                <th>Sân</th>
-                <th>Thời gian</th>
-                <th>Trạng thái</th>
-              </tr>
-            </thead>
+              <a th:href="@{/schedules}" class="btn btn-light btn-sm">
+                Xem lịch
+              </a>
+            </div>
 
-            <tbody>
-              <tr th:each="schedule, stat : ${latestSchedules}">
-                <td th:text="${stat.count}"></td>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table
+                  class="table table-bordered table-striped align-middle mb-0"
+                >
+                  <thead class="table-dark">
+                    <tr>
+                      <th>STT</th>
+                      <th>Tiêu đề</th>
+                      <th>Sân</th>
+                      <th>Thời gian</th>
+                      <th>Số người</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                  </thead>
 
-                <td th:text="${schedule.title}"></td>
+                  <tbody>
+                    <tr th:each="schedule, stat : ${todaySchedules}">
+                      <td th:text="${stat.count}"></td>
 
-                <td th:text="${schedule.courtName}"></td>
+                      <td th:text="${schedule.title}"></td>
 
-                <td
-                  th:text="${schedule.playTime != null ? #temporals.format(schedule.playTime, 'dd/MM/yyyy HH:mm') : 'Chưa cập nhật'}"
-                ></td>
+                      <td th:text="${schedule.courtName}"></td>
 
-                <td>
-                  <span
-                    class="badge bg-primary"
-                    th:text="${schedule.status != null ? schedule.status.displayName : 'Chưa cập nhật'}"
-                  ></span>
-                </td>
-              </tr>
+                      <td
+                        th:text="${schedule.playTime != null ? #temporals.format(schedule.playTime, 'HH:mm') : '-'}"
+                      ></td>
 
-              <tr th:if="${#lists.isEmpty(latestSchedules)}">
-                <td colspan="5" class="text-center text-muted">
-                  Chưa có lịch đánh nào.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                      <td>
+                        <strong>
+                          <span th:text="${schedule.currentPlayers}"></span>
+                          /
+                          <span th:text="${schedule.maxPlayers}"></span>
+                        </strong>
+                      </td>
+
+                      <td>
+                        <span
+                          class="badge bg-success"
+                          th:if="${schedule.status != null and schedule.status.name() == 'OPEN'}"
+                        >
+                          Đang mở
+                        </span>
+
+                        <span
+                          class="badge bg-warning text-dark"
+                          th:if="${schedule.status != null and schedule.status.name() == 'LOCKED'}"
+                        >
+                          Đã khóa
+                        </span>
+
+                        <span
+                          class="badge bg-danger"
+                          th:if="${schedule.status != null and schedule.status.name() == 'CANCELLED'}"
+                        >
+                          Đã hủy
+                        </span>
+                      </td>
+                    </tr>
+
+                    <tr th:if="${#lists.isEmpty(todaySchedules)}">
+                      <td colspan="6" class="text-center text-muted">
+                        Hôm nay chưa có lịch đánh nào.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="card shadow-sm h-100">
+            <div
+              class="card-header bg-primary text-white d-flex justify-content-between align-items-center"
+            >
+              <span>5 lịch sắp tới</span>
+
+              <a
+                th:href="@{/schedules(filter='upcoming')}"
+                class="btn btn-light btn-sm"
+              >
+                Xem thêm
+              </a>
+            </div>
+
+            <div class="card-body">
+              <div
+                th:if="${#lists.isEmpty(upcomingSchedules)}"
+                class="text-muted"
+              >
+                Chưa có lịch đánh sắp tới.
+              </div>
+
+              <div
+                class="list-group"
+                th:if="${!#lists.isEmpty(upcomingSchedules)}"
+              >
+                <a
+                  th:each="schedule : ${upcomingSchedules}"
+                  th:href="@{/schedules/participants/{id}(id=${schedule.id})}"
+                  class="list-group-item list-group-item-action"
+                >
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1" th:text="${schedule.title}"></h6>
+
+                    <small
+                      th:text="${schedule.playTime != null ? #temporals.format(schedule.playTime, 'dd/MM HH:mm') : '-'}"
+                    ></small>
+                  </div>
+
+                  <p class="mb-1 text-muted">
+                    Sân:
+                    <span th:text="${schedule.courtName}"></span>
+                  </p>
+
+                  <small>
+                    Số người:
+                    <strong>
+                      <span th:text="${schedule.currentPlayers}"></span>
+                      /
+                      <span th:text="${schedule.maxPlayers}"></span>
+                    </strong>
+                  </small>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-4">
+        <div class="col-md-3">
+          <a th:href="@{/users}" class="btn btn-outline-primary w-100">
+            Quản lý thành viên
+          </a>
+        </div>
+
+        <div class="col-md-3">
+          <a th:href="@{/guest-payments}" class="btn btn-outline-warning w-100">
+            Khách vãng lai
+          </a>
+        </div>
+
+        <div class="col-md-3">
+          <a th:href="@{/payments}" class="btn btn-outline-success w-100">
+            Khoản thu
+          </a>
+        </div>
+
+        <div class="col-md-3">
+          <a th:href="@{/expenses}" class="btn btn-outline-danger w-100">
+            Khoản chi
+          </a>
         </div>
       </div>
     </div>
