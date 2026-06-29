@@ -132,6 +132,109 @@ function initSubmitLoading() {
 }
 
 /* =========================
+   FLATPICKR AUTO LOAD
+========================= */
+
+const FLATPICKR_CSS_URL =
+  "https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css";
+
+const FLATPICKR_JS_URL = "https://cdn.jsdelivr.net/npm/flatpickr";
+
+let flatpickrLoadingPromise = null;
+
+function loadStyleOnce(id, href) {
+  if (document.getElementById(id)) return;
+
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href = href;
+
+  document.head.appendChild(link);
+}
+
+function loadScriptOnce(id, src) {
+  return new Promise((resolve, reject) => {
+    const existingScript = document.getElementById(id);
+
+    if (existingScript) {
+      existingScript.addEventListener("load", resolve);
+      existingScript.addEventListener("error", reject);
+
+      if (window.flatpickr) {
+        resolve();
+      }
+
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = id;
+    script.src = src;
+    script.async = true;
+
+    script.onload = resolve;
+    script.onerror = reject;
+
+    document.body.appendChild(script);
+  });
+}
+
+function ensureFlatpickrLoaded() {
+  if (window.flatpickr) {
+    return Promise.resolve();
+  }
+
+  if (flatpickrLoadingPromise) {
+    return flatpickrLoadingPromise;
+  }
+
+  loadStyleOnce("flatpickr-css", FLATPICKR_CSS_URL);
+
+  flatpickrLoadingPromise = loadScriptOnce("flatpickr-js", FLATPICKR_JS_URL);
+
+  return flatpickrLoadingPromise;
+}
+
+function initDatePickers() {
+  const dateInputs = document.querySelectorAll(".date-picker");
+  const dateTimeInputs = document.querySelectorAll(".datetime-picker");
+
+  if (dateInputs.length === 0 && dateTimeInputs.length === 0) {
+    return;
+  }
+
+  ensureFlatpickrLoaded()
+    .then(() => {
+      dateInputs.forEach((input) => {
+        if (input._flatpickr) return;
+
+        flatpickr(input, {
+          dateFormat: "d/m/Y",
+          allowInput: true,
+        });
+      });
+
+      dateTimeInputs.forEach((input) => {
+        if (input._flatpickr) return;
+
+        flatpickr(input, {
+          enableTime: true,
+          time_24hr: true,
+          minuteIncrement: 15,
+          altInput: true,
+          altFormat: "d/m/Y H:i",
+          dateFormat: "Y-m-d\\TH:i",
+          allowInput: false,
+        });
+      });
+    })
+    .catch(() => {
+      console.error("Không thể tải Flatpickr.");
+    });
+}
+
+/* =========================
    INIT
 ========================= */
 
@@ -139,6 +242,7 @@ function initAppUI() {
   setActiveNavbar();
   initConfirmActions();
   initSubmitLoading();
+  initDatePickers();
 }
 
 document.addEventListener("DOMContentLoaded", function () {

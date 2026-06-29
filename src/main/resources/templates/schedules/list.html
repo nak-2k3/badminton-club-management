@@ -5,262 +5,323 @@
 >
   <head>
     <meta charset="UTF-8" />
+
     <title>Danh sách lịch đánh</title>
 
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
   </head>
 
-  <body>
+  <body
+    hx-boost="true"
+    hx-target="#main-content"
+    hx-select="#main-content"
+    hx-push-url="true"
+    hx-swap="innerHTML"
+  >
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <div class="container mt-5 mb-5">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h2 th:text="${pageTitle}"></h2>
+    <main id="main-content" class="app-main">
+      <div class="container app-page-container">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title" th:text="${pageTitle}">
+              Danh sách lịch đánh
+            </h2>
 
-          <p class="text-muted mb-0">
-            Mặc định hệ thống hiển thị lịch đánh hôm nay để dễ theo dõi.
-          </p>
+            <p class="page-subtitle">
+              Mặc định hệ thống hiển thị lịch đánh hôm nay để dễ theo dõi.
+            </p>
+          </div>
+
+          <div class="page-actions">
+            <a
+              sec:authorize="hasRole('ADMIN')"
+              th:href="@{/schedules/create}"
+              class="btn btn-success"
+            >
+              Tạo lịch
+            </a>
+          </div>
         </div>
 
-        <a
-          sec:authorize="hasRole('ADMIN')"
-          th:href="@{/schedules/create}"
-          class="btn btn-success"
-        >
-          Tạo lịch
-        </a>
-      </div>
-
-      <div class="mb-4">
-        <div class="btn-group">
-          <a
-            th:href="@{/schedules(filter='today')}"
-            class="btn"
-            th:classappend="${filter == 'today'} ? 'btn-primary' : 'btn-outline-primary'"
+        <div class="card filter-card">
+          <div
+            class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2"
           >
-            Hôm nay
-          </a>
+            <span>Bộ lọc lịch đánh</span>
 
-          <a
-            th:href="@{/schedules(filter='upcoming')}"
-            class="btn"
-            th:classappend="${filter == 'upcoming'} ? 'btn-primary' : 'btn-outline-primary'"
-          >
-            Sắp tới
-          </a>
+            <span class="small">
+              Đang hiển thị:
+              <strong th:text="${#lists.size(schedules)}">0</strong>
+              lịch
+            </span>
+          </div>
 
-          <a
-            th:href="@{/schedules(filter='all')}"
-            class="btn"
-            th:classappend="${filter == 'all'} ? 'btn-primary' : 'btn-outline-primary'"
+          <div class="card-body">
+            <div class="btn-group flex-wrap" role="group">
+              <a
+                th:href="@{/schedules(filter='today')}"
+                class="btn"
+                th:classappend="${filter == 'today'} ? 'btn-primary' : 'btn-outline-primary'"
+              >
+                Hôm nay
+              </a>
+
+              <a
+                th:href="@{/schedules(filter='upcoming')}"
+                class="btn"
+                th:classappend="${filter == 'upcoming'} ? 'btn-primary' : 'btn-outline-primary'"
+              >
+                Sắp tới
+              </a>
+
+              <a
+                th:href="@{/schedules(filter='all')}"
+                class="btn"
+                th:classappend="${filter == 'all'} ? 'btn-primary' : 'btn-outline-primary'"
+              >
+                Tất cả
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div th:if="${param.full}" class="alert alert-danger">
+          Buổi đánh đã đủ số lượng người tham gia.
+        </div>
+
+        <div th:if="${param.registerFailed}" class="alert alert-danger">
+          Không thể đăng ký tham gia buổi đánh này. Vui lòng kiểm tra trạng thái
+          lịch hoặc số lượng người tham gia.
+        </div>
+
+        <div class="card">
+          <div
+            class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2"
           >
-            Tất cả
-          </a>
+            <span>Danh sách lịch đánh</span>
+
+            <span class="small">
+              Thành viên có thể đăng ký các lịch đang mở và chưa đủ người.
+            </span>
+          </div>
+
+          <div class="card-body">
+            <div class="table-responsive">
+              <table
+                class="table table-bordered table-striped align-middle mb-0"
+              >
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Tiêu đề</th>
+                    <th>Sân</th>
+                    <th>Thời gian</th>
+                    <th>Giới hạn</th>
+                    <th>Số người</th>
+                    <th>Trạng thái</th>
+                    <th>Tham gia</th>
+                    <th>Người tham gia</th>
+                    <th sec:authorize="hasRole('ADMIN')" width="230">
+                      Quản lý
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr th:each="schedule, stat : ${schedules}">
+                    <td th:text="${stat.count}">1</td>
+
+                    <td>
+                      <div class="fw-bold" th:text="${schedule.title}">
+                        Lịch đánh
+                      </div>
+                    </td>
+
+                    <td
+                      th:text="${schedule.courtName != null ? schedule.courtName : 'Chưa cập nhật'}"
+                    >
+                      Sân A
+                    </td>
+
+                    <td
+                      th:text="${schedule.playTime != null ? #temporals.format(schedule.playTime, 'dd/MM/yyyy HH:mm') : 'Chưa cập nhật'}"
+                    >
+                      01/01/2026 18:00
+                    </td>
+
+                    <td th:text="${schedule.maxPlayers}">0</td>
+
+                    <td>
+                      <div>
+                        <strong>
+                          <span th:text="${schedule.currentPlayers}">0</span>
+                          /
+                          <span th:text="${schedule.maxPlayers}">0</span>
+                        </strong>
+                      </div>
+
+                      <div class="text-muted small">
+                        <span th:text="${memberCountMap.get(schedule.id)}">
+                          0
+                        </span>
+                        thành viên +
+                        <span th:text="${guestCountMap.get(schedule.id)}">
+                          0
+                        </span>
+                        khách
+                      </div>
+                    </td>
+
+                    <td>
+                      <span
+                        class="badge bg-success"
+                        th:if="${schedule.status != null and schedule.status.name() == 'OPEN'}"
+                      >
+                        Đang mở
+                      </span>
+
+                      <span
+                        class="badge bg-warning text-dark"
+                        th:if="${schedule.status != null and schedule.status.name() == 'LOCKED'}"
+                      >
+                        Đã khóa đăng ký
+                      </span>
+
+                      <span
+                        class="badge bg-danger"
+                        th:if="${schedule.status != null and schedule.status.name() == 'CANCELLED'}"
+                      >
+                        Đã hủy
+                      </span>
+
+                      <span
+                        class="badge bg-secondary"
+                        th:if="${schedule.status == null}"
+                      >
+                        Chưa cập nhật
+                      </span>
+                    </td>
+
+                    <td>
+                      <a
+                        th:if="${schedule.status != null
+                          and schedule.status.name() == 'OPEN'
+                          and schedule.currentPlayers < schedule.maxPlayers
+                          and !schedule.registered}"
+                        th:href="@{/schedules/register/{id}(id=${schedule.id})}"
+                        class="btn btn-primary btn-sm"
+                      >
+                        Tham gia
+                      </a>
+
+                      <a
+                        th:if="${schedule.status != null
+                          and schedule.status.name() == 'OPEN'
+                          and schedule.registered}"
+                        th:href="@{/schedules/cancel-registration/{id}(id=${schedule.id})}"
+                        class="btn btn-danger btn-sm"
+                        data-confirm="Bạn có chắc muốn hủy tham gia buổi này?"
+                      >
+                        Hủy tham gia
+                      </a>
+
+                      <span
+                        th:if="${schedule.status != null
+                          and schedule.status.name() == 'OPEN'
+                          and schedule.currentPlayers >= schedule.maxPlayers
+                          and !schedule.registered}"
+                        class="badge bg-danger"
+                      >
+                        Đã đủ người
+                      </span>
+
+                      <span
+                        th:if="${schedule.status != null
+                          and schedule.status.name() != 'OPEN'}"
+                        class="badge bg-secondary"
+                      >
+                        Không thể tham gia
+                      </span>
+
+                      <span
+                        th:if="${schedule.status == null}"
+                        class="badge bg-secondary"
+                      >
+                        Không thể tham gia
+                      </span>
+                    </td>
+
+                    <td>
+                      <a
+                        th:href="@{/schedules/participants/{id}(id=${schedule.id})}"
+                        class="btn btn-outline-primary btn-sm"
+                      >
+                        Danh sách
+                      </a>
+                    </td>
+
+                    <td sec:authorize="hasRole('ADMIN')">
+                      <div class="btn-action-group">
+                        <a
+                          th:href="@{/schedules/edit/{id}(id=${schedule.id})}"
+                          class="btn btn-warning btn-sm"
+                        >
+                          Sửa
+                        </a>
+
+                        <a
+                          th:if="${schedule.status != null and schedule.status.name() == 'OPEN'}"
+                          th:href="@{/schedules/lock/{id}(id=${schedule.id})}"
+                          class="btn btn-secondary btn-sm"
+                          data-confirm="Bạn có chắc muốn khóa đăng ký lịch này?"
+                        >
+                          Khóa
+                        </a>
+
+                        <a
+                          th:if="${schedule.status != null and schedule.status.name() == 'LOCKED'}"
+                          th:href="@{/schedules/open/{id}(id=${schedule.id})}"
+                          class="btn btn-success btn-sm"
+                          data-confirm="Bạn có chắc muốn mở lại đăng ký lịch này?"
+                        >
+                          Mở
+                        </a>
+
+                        <a
+                          th:if="${schedule.status != null and schedule.status.name() != 'CANCELLED'}"
+                          th:href="@{/schedules/cancel/{id}(id=${schedule.id})}"
+                          class="btn btn-danger btn-sm"
+                          data-confirm="Bạn có chắc muốn hủy lịch này?"
+                        >
+                          Hủy
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr th:if="${#lists.isEmpty(schedules)}">
+                    <td colspan="10" class="text-center text-muted py-4">
+                      Không có lịch đánh phù hợp.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
+    </main>
 
-      <div th:if="${param.full}" class="alert alert-danger">
-        Buổi đánh đã đủ số lượng người tham gia.
-      </div>
-
-      <div th:if="${param.registerFailed}" class="alert alert-danger">
-        Không thể đăng ký tham gia buổi đánh này. Vui lòng kiểm tra trạng thái
-        lịch hoặc số lượng người tham gia.
-      </div>
-
-      <div class="table-responsive">
-        <table class="table table-bordered table-striped align-middle">
-          <thead class="table-dark">
-            <tr>
-              <th>STT</th>
-              <th>Tiêu đề</th>
-              <th>Sân</th>
-              <th>Thời gian</th>
-              <th>Giới hạn</th>
-              <th>Số người</th>
-              <th>Trạng thái</th>
-              <th>Tham gia</th>
-              <th>Người tham gia</th>
-              <th sec:authorize="hasRole('ADMIN')" width="230">Quản lý</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr th:each="schedule, stat : ${schedules}">
-              <td th:text="${stat.count}"></td>
-
-              <td th:text="${schedule.title}"></td>
-
-              <td th:text="${schedule.courtName}"></td>
-
-              <td
-                th:text="${schedule.playTime != null ? #temporals.format(schedule.playTime, 'dd/MM/yyyy HH:mm') : 'Chưa cập nhật'}"
-              ></td>
-
-              <td th:text="${schedule.maxPlayers}"></td>
-
-              <td>
-                <div>
-                  <strong>
-                    <span th:text="${schedule.currentPlayers}"></span>
-                    /
-                    <span th:text="${schedule.maxPlayers}"></span>
-                  </strong>
-                </div>
-
-                <div class="text-muted small">
-                  <span th:text="${memberCountMap.get(schedule.id)}"></span>
-                  thành viên +
-                  <span th:text="${guestCountMap.get(schedule.id)}"></span>
-                  khách
-                </div>
-              </td>
-
-              <td>
-                <span
-                  class="badge bg-success"
-                  th:if="${schedule.status != null and schedule.status.name() == 'OPEN'}"
-                >
-                  Đang mở
-                </span>
-
-                <span
-                  class="badge bg-warning text-dark"
-                  th:if="${schedule.status != null and schedule.status.name() == 'LOCKED'}"
-                >
-                  Đã khóa đăng ký
-                </span>
-
-                <span
-                  class="badge bg-danger"
-                  th:if="${schedule.status != null and schedule.status.name() == 'CANCELLED'}"
-                >
-                  Đã hủy
-                </span>
-
-                <span
-                  class="badge bg-secondary"
-                  th:if="${schedule.status == null}"
-                >
-                  Chưa cập nhật
-                </span>
-              </td>
-
-              <td>
-                <a
-                  th:if="${schedule.status != null
-                and schedule.status.name() == 'OPEN'
-                and schedule.currentPlayers < schedule.maxPlayers
-                and !schedule.registered}"
-                  th:href="@{/schedules/register/{id}(id=${schedule.id})}"
-                  class="btn btn-primary btn-sm"
-                >
-                  Tham gia
-                </a>
-
-                <a
-                  th:if="${schedule.status != null
-                and schedule.status.name() == 'OPEN'
-                and schedule.registered}"
-                  th:href="@{/schedules/cancel-registration/{id}(id=${schedule.id})}"
-                  class="btn btn-danger btn-sm"
-                  onclick="
-                    return confirm('Bạn có chắc muốn hủy tham gia buổi này?');
-                  "
-                >
-                  Hủy tham gia
-                </a>
-
-                <span
-                  th:if="${schedule.status != null
-                  and schedule.status.name() == 'OPEN'
-                  and schedule.currentPlayers >= schedule.maxPlayers
-                  and !schedule.registered}"
-                  class="badge bg-danger"
-                >
-                  Đã đủ người
-                </span>
-
-                <span
-                  th:if="${schedule.status != null
-                  and schedule.status.name() != 'OPEN'}"
-                  class="badge bg-secondary"
-                >
-                  Không thể tham gia
-                </span>
-
-                <span
-                  th:if="${schedule.status == null}"
-                  class="badge bg-secondary"
-                >
-                  Không thể tham gia
-                </span>
-              </td>
-
-              <td>
-                <a
-                  th:href="@{/schedules/participants/{id}(id=${schedule.id})}"
-                  class="btn btn-outline-primary btn-sm"
-                >
-                  Danh sách
-                </a>
-              </td>
-
-              <td sec:authorize="hasRole('ADMIN')">
-                <a
-                  th:href="@{/schedules/edit/{id}(id=${schedule.id})}"
-                  class="btn btn-warning btn-sm mb-1"
-                >
-                  Sửa
-                </a>
-
-                <a
-                  th:if="${schedule.status != null and schedule.status.name() == 'OPEN'}"
-                  th:href="@{/schedules/lock/{id}(id=${schedule.id})}"
-                  class="btn btn-secondary btn-sm mb-1"
-                  onclick="
-                    return confirm('Bạn có chắc muốn khóa đăng ký lịch này?');
-                  "
-                >
-                  Khóa
-                </a>
-
-                <a
-                  th:if="${schedule.status != null and schedule.status.name() == 'LOCKED'}"
-                  th:href="@{/schedules/open/{id}(id=${schedule.id})}"
-                  class="btn btn-success btn-sm mb-1"
-                  onclick="
-                    return confirm('Bạn có chắc muốn mở lại đăng ký lịch này?');
-                  "
-                >
-                  Mở
-                </a>
-
-                <a
-                  th:if="${schedule.status != null and schedule.status.name() != 'CANCELLED'}"
-                  th:href="@{/schedules/cancel/{id}(id=${schedule.id})}"
-                  class="btn btn-danger btn-sm mb-1"
-                  onclick="return confirm('Bạn có chắc muốn hủy lịch này?');"
-                >
-                  Hủy
-                </a>
-              </td>
-            </tr>
-
-            <tr th:if="${#lists.isEmpty(schedules)}">
-              <td colspan="10" class="text-center text-muted">
-                Không có lịch đánh phù hợp.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <div th:replace="~{fragments/footer :: footer}"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script th:src="@{/js/app.js}"></script>
   </body>
 </html>

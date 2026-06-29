@@ -221,19 +221,5 @@
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script th:src="@{/js/app.js}"></script>
-
-    <script>
-      function initDatePicker() {
-        if (window.flatpickr) {
-          flatpickr(".date-picker", {
-            dateFormat: "d/m/Y",
-            allowInput: true,
-          });
-        }
-      }
-
-      document.addEventListener("DOMContentLoaded", initDatePicker);
-      document.body.addEventListener("htmx:afterSwap", initDatePicker);
-    </script>
   </body>
 </html>
