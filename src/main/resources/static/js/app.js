@@ -140,7 +140,14 @@ const FLATPICKR_CSS_URL =
 
 const FLATPICKR_JS_URL = "https://cdn.jsdelivr.net/npm/flatpickr";
 
+const FLATPICKR_MONTH_CSS_URL =
+  "https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css";
+
+const FLATPICKR_MONTH_JS_URL =
+  "https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js";
+
 let flatpickrLoadingPromise = null;
+let flatpickrMonthLoadingPromise = null;
 
 function loadStyleOnce(id, href) {
   if (document.getElementById(id)) return;
@@ -153,18 +160,27 @@ function loadStyleOnce(id, href) {
   document.head.appendChild(link);
 }
 
-function loadScriptOnce(id, src) {
+function loadScriptOnce(id, src, isLoaded) {
   return new Promise((resolve, reject) => {
+    if (isLoaded && isLoaded()) {
+      resolve();
+      return;
+    }
+
     const existingScript = document.getElementById(id);
 
     if (existingScript) {
-      existingScript.addEventListener("load", resolve);
-      existingScript.addEventListener("error", reject);
-
-      if (window.flatpickr) {
+      if (existingScript.dataset.loaded === "true") {
         resolve();
+        return;
       }
 
+      existingScript.addEventListener("load", function () {
+        existingScript.dataset.loaded = "true";
+        resolve();
+      });
+
+      existingScript.addEventListener("error", reject);
       return;
     }
 
@@ -173,7 +189,11 @@ function loadScriptOnce(id, src) {
     script.src = src;
     script.async = true;
 
-    script.onload = resolve;
+    script.onload = function () {
+      script.dataset.loaded = "true";
+      resolve();
+    };
+
     script.onerror = reject;
 
     document.body.appendChild(script);
@@ -191,47 +211,188 @@ function ensureFlatpickrLoaded() {
 
   loadStyleOnce("flatpickr-css", FLATPICKR_CSS_URL);
 
-  flatpickrLoadingPromise = loadScriptOnce("flatpickr-js", FLATPICKR_JS_URL);
+  flatpickrLoadingPromise = loadScriptOnce(
+    "flatpickr-js",
+    FLATPICKR_JS_URL,
+    function () {
+      return window.flatpickr;
+    },
+  );
 
   return flatpickrLoadingPromise;
+}
+
+function ensureFlatpickrMonthLoaded() {
+  if (window.monthSelectPlugin) {
+    return Promise.resolve();
+  }
+
+  if (flatpickrMonthLoadingPromise) {
+    return flatpickrMonthLoadingPromise;
+  }
+
+  loadStyleOnce("flatpickr-month-css", FLATPICKR_MONTH_CSS_URL);
+
+  flatpickrMonthLoadingPromise = ensureFlatpickrLoaded().then(function () {
+    return loadScriptOnce(
+      "flatpickr-month-js",
+      FLATPICKR_MONTH_JS_URL,
+      function () {
+        return window.monthSelectPlugin;
+      },
+    );
+  });
+
+  return flatpickrMonthLoadingPromise;
 }
 
 function initDatePickers() {
   const dateInputs = document.querySelectorAll(".date-picker");
   const dateTimeInputs = document.querySelectorAll(".datetime-picker");
+  const monthInputs = document.querySelectorAll(".month-picker");
 
-  if (dateInputs.length === 0 && dateTimeInputs.length === 0) {
+  if (
+    dateInputs.length === 0 &&
+    dateTimeInputs.length === 0 &&
+    monthInputs.length === 0
+  ) {
     return;
   }
 
-  ensureFlatpickrLoaded()
-    .then(() => {
-      dateInputs.forEach((input) => {
-        if (input._flatpickr) return;
+  if (dateInputs.length > 0 || dateTimeInputs.length > 0) {
+    ensureFlatpickrLoaded()
+      .then(function () {
+        dateInputs.forEach((input) => {
+          if (input._flatpickr) return;
 
-        flatpickr(input, {
-          dateFormat: "d/m/Y",
-          allowInput: true,
+          flatpickr(input, {
+            dateFormat: "d/m/Y",
+            allowInput: true,
+          });
         });
-      });
 
-      dateTimeInputs.forEach((input) => {
-        if (input._flatpickr) return;
+        dateTimeInputs.forEach((input) => {
+          if (input._flatpickr) return;
 
-        flatpickr(input, {
-          enableTime: true,
-          time_24hr: true,
-          minuteIncrement: 15,
-          altInput: true,
-          altFormat: "d/m/Y H:i",
-          dateFormat: "Y-m-d\\TH:i",
-          allowInput: false,
+          flatpickr(input, {
+            enableTime: true,
+            time_24hr: true,
+            minuteIncrement: 15,
+            altInput: true,
+            altFormat: "d/m/Y H:i",
+            dateFormat: "Y-m-d\\TH:i",
+            allowInput: false,
+          });
         });
+      })
+      .catch(function () {
+        console.error("Không thể tải Flatpickr.");
       });
-    })
-    .catch(() => {
-      console.error("Không thể tải Flatpickr.");
+  }
+
+  if (monthInputs.length > 0) {
+    ensureFlatpickrMonthLoaded()
+      .then(function () {
+        monthInputs.forEach((input) => {
+          if (input._flatpickr) return;
+
+          flatpickr(input, {
+            altInput: true,
+            allowInput: false,
+            dateFormat: "Y-m",
+            altFormat: "m/Y",
+            plugins: [
+              new monthSelectPlugin({
+                shorthand: false,
+                dateFormat: "Y-m",
+                altFormat: "m/Y",
+                theme: "light",
+              }),
+            ],
+          });
+        });
+      })
+      .catch(function () {
+        console.error("Không thể tải Flatpickr Month Picker.");
+      });
+  }
+}
+
+/* =========================
+   PAYMENT DETAIL FILTER
+========================= */
+
+function initPaymentDetailFilter() {
+  const searchInput = document.getElementById("paymentSearchInput");
+  const statusFilter = document.getElementById("paymentStatusFilter");
+  const resetButton = document.getElementById("paymentResetFilter");
+  const noResultMessage = document.getElementById("paymentNoResultMessage");
+
+  if (!searchInput || !statusFilter) return;
+
+  const rows = document.querySelectorAll(".payment-row");
+
+  function filterPayments() {
+    const keyword = searchInput.value.toLowerCase().trim();
+    const selectedStatus = statusFilter.value;
+    let visibleCount = 0;
+
+    rows.forEach((row) => {
+      const name = (row.getAttribute("data-name") || "").toLowerCase();
+      const rowStatus = row.getAttribute("data-status") || "";
+
+      const matchName = name.includes(keyword);
+      const matchStatus =
+        selectedStatus === "ALL" || rowStatus === selectedStatus;
+
+      if (matchName && matchStatus) {
+        row.style.display = "";
+        visibleCount++;
+      } else {
+        row.style.display = "none";
+      }
     });
+
+    if (noResultMessage) {
+      if (visibleCount === 0 && rows.length > 0) {
+        noResultMessage.classList.remove("d-none");
+      } else {
+        noResultMessage.classList.add("d-none");
+      }
+    }
+  }
+
+  if (searchInput.dataset.paymentFilterBound !== "true") {
+    searchInput.dataset.paymentFilterBound = "true";
+    searchInput.addEventListener("input", filterPayments);
+  }
+
+  if (statusFilter.dataset.paymentFilterBound !== "true") {
+    statusFilter.dataset.paymentFilterBound = "true";
+    statusFilter.addEventListener("change", filterPayments);
+  }
+
+  if (resetButton && resetButton.dataset.paymentFilterBound !== "true") {
+    resetButton.dataset.paymentFilterBound = "true";
+
+    resetButton.addEventListener("click", function () {
+      searchInput.value = "";
+      statusFilter.value = "ALL";
+      filterPayments();
+    });
+  }
+
+  filterPayments();
+}
+
+/* =========================
+   DROPDOWN INSIDE TABLE
+========================= */
+
+function initDropdownInsideTable() {
+  document.querySelectorAll(".table .dropdown-toggle").forEach((button) => {
+    button.setAttribute("hx-boost", "false");
+  });
 }
 
 /* =========================
@@ -243,6 +404,8 @@ function initAppUI() {
   initConfirmActions();
   initSubmitLoading();
   initDatePickers();
+  initPaymentDetailFilter();
+  initDropdownInsideTable();
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -270,9 +433,24 @@ document.body.addEventListener("htmx:afterSettle", function () {
   removePageLoading();
 });
 
-document.body.addEventListener("htmx:responseError", function () {
+document.body.addEventListener("htmx:responseError", function (event) {
   removePageLoading();
-  alert("Có lỗi xảy ra khi xử lý yêu cầu. Vui lòng thử lại.");
+
+  const status = event.detail.xhr.status;
+  const url = event.detail.pathInfo
+    ? event.detail.pathInfo.requestPath
+    : window.location.href;
+
+  alert(
+    "Có lỗi khi tải trang.\n\n" +
+      "Mã lỗi: " +
+      status +
+      "\n" +
+      "Đường dẫn: " +
+      url +
+      "\n\n" +
+      "Bạn hãy xem log Spring Boot trong Terminal để biết lỗi chi tiết.",
+  );
 });
 
 document.body.addEventListener("htmx:sendError", function () {
