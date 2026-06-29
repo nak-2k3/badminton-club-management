@@ -5,11 +5,14 @@
 >
   <body>
     <nav
-      class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm"
+      class="navbar navbar-expand-lg navbar-dark app-navbar"
       th:fragment="navbar"
     >
       <div class="container">
-        <a class="navbar-brand fw-bold" th:href="@{/}"> 🏸 Badminton Club </a>
+        <a class="navbar-brand app-brand" th:href="@{/}">
+          <span class="brand-icon">🏸</span>
+          <span>Badminton Club</span>
+        </a>
 
         <button
           class="navbar-toggler"
@@ -19,45 +22,70 @@
           aria-controls="navbarNav"
           aria-expanded="false"
           aria-label="Toggle navigation"
+          hx-boost="false"
         >
           <span class="navbar-toggler-icon"></span>
         </button>
 
         <div class="collapse navbar-collapse" id="navbarNav">
-          <!-- Menu bên trái -->
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0 app-menu">
             <li class="nav-item">
-              <a class="nav-link" th:href="@{/}"> Trang chủ </a>
+              <a class="nav-link app-nav-link" th:href="@{/}"> Trang chủ </a>
             </li>
 
             <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-              <a class="nav-link" th:href="@{/users}"> Thành viên </a>
+              <a class="nav-link app-nav-link" th:href="@{/dashboard}">
+                Dashboard
+              </a>
+            </li>
+
+            <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+              <a class="nav-link app-nav-link" th:href="@{/users}">
+                Thành viên
+              </a>
             </li>
 
             <li class="nav-item" sec:authorize="isAuthenticated()">
-              <a class="nav-link" th:href="@{/schedules}"> Lịch đánh </a>
+              <a class="nav-link app-nav-link" th:href="@{/schedules}">
+                Lịch đánh
+              </a>
             </li>
 
-            <!-- Nhóm tài chính -->
             <li
               class="nav-item dropdown"
               sec:authorize="hasAnyRole('ADMIN','TREASURER')"
             >
               <a
-                class="nav-link dropdown-toggle"
+                class="nav-link app-nav-link dropdown-toggle"
                 href="#"
                 id="financeDropdown"
                 role="button"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
+                hx-boost="false"
               >
                 Tài chính
               </a>
 
-              <ul class="dropdown-menu" aria-labelledby="financeDropdown">
+              <ul
+                class="dropdown-menu app-dropdown"
+                aria-labelledby="financeDropdown"
+              >
                 <li>
                   <a class="dropdown-item" th:href="@{/payments}">
                     Quản lý khoản thu
+                  </a>
+                </li>
+
+                <li>
+                  <a class="dropdown-item" th:href="@{/guest-payments}">
+                    Khách vãng lai
+                  </a>
+                </li>
+
+                <li>
+                  <a class="dropdown-item" th:href="@{/expenses}">
+                    Quản lý khoản chi
                   </a>
                 </li>
 
@@ -66,61 +94,63 @@
                     Định mức phí
                   </a>
                 </li>
+
                 <li>
-                  <a class="dropdown-item" th:href="@{/expenses}">
-                    Quản lý khoản chi
-                  </a>
+                  <hr class="dropdown-divider" />
                 </li>
+
                 <li>
-                  <a class="dropdown-item" th:href="@{/reports/finance}">
+                  <a
+                    class="dropdown-item fw-semibold"
+                    th:href="@{/reports/finance}"
+                  >
                     Báo cáo thu chi
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item" th:href="@{/guest-payments}">
-                    Khách vãng lai
                   </a>
                 </li>
               </ul>
             </li>
-            <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-              <a class="nav-link" th:href="@{/dashboard}"> Thống kê </a>
-            </li>
           </ul>
 
-          <!-- Bên phải: chưa đăng nhập -->
-          <div sec:authorize="!isAuthenticated()">
+          <div sec:authorize="!isAuthenticated()" class="navbar-actions">
             <a th:href="@{/login}" class="btn btn-outline-light btn-sm">
               Đăng nhập
             </a>
           </div>
 
-          <!-- Bên phải: đã đăng nhập -->
-          <div sec:authorize="isAuthenticated()" class="dropdown">
+          <div sec:authorize="isAuthenticated()" class="dropdown navbar-user">
             <button
-              class="btn btn-outline-light btn-sm dropdown-toggle"
+              class="btn user-menu-btn dropdown-toggle"
               type="button"
               id="userDropdown"
               data-bs-toggle="dropdown"
               aria-expanded="false"
+              hx-boost="false"
             >
-              Xin chào,
-              <span sec:authentication="name"></span>
+              <span class="user-icon">👤</span>
+
+              <span class="user-info">
+                <span class="user-label">Xin chào</span>
+                <span class="user-name" sec:authentication="name"></span>
+              </span>
             </button>
 
             <ul
-              class="dropdown-menu dropdown-menu-end"
+              class="dropdown-menu dropdown-menu-end app-dropdown user-dropdown"
               aria-labelledby="userDropdown"
             >
               <li>
-                <h6 class="dropdown-header">
+                <div class="dropdown-item-text small text-muted">
                   Vai trò:
-                  <span sec:authorize="hasRole('ADMIN')"> Quản trị viên </span>
-
-                  <span sec:authorize="hasRole('MEMBER')"> Thành viên </span>
-
-                  <span sec:authorize="hasRole('TREASURER')"> Thủ quỹ </span>
-                </h6>
+                  <strong sec:authorize="hasRole('ADMIN')">
+                    Quản trị viên
+                  </strong>
+                  <strong sec:authorize="hasRole('MEMBER')">
+                    Thành viên
+                  </strong>
+                  <strong sec:authorize="hasRole('TREASURER')">
+                    Thủ quỹ
+                  </strong>
+                </div>
               </li>
 
               <li>
@@ -132,17 +162,25 @@
                   Hồ sơ cá nhân
                 </a>
               </li>
+
               <li>
                 <a class="dropdown-item" th:href="@{/my-payments}">
                   Khoản phí của tôi
                 </a>
               </li>
+
+              <li>
+                <a class="dropdown-item" th:href="@{/profile/change-password}">
+                  Đổi mật khẩu
+                </a>
+              </li>
+
               <li>
                 <hr class="dropdown-divider" />
               </li>
 
               <li>
-                <form th:action="@{/logout}" method="post">
+                <form th:action="@{/logout}" method="post" hx-boost="false">
                   <button type="submit" class="dropdown-item text-danger">
                     Đăng xuất
                   </button>
