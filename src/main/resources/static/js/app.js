@@ -1,5 +1,23 @@
 if ("scrollRestoration" in history) {
-  history.scrollRestoration = "manual";
+  history.scrollRestoration = "auto";
+}
+
+/* =========================
+   DISABLE HTMX NAVIGATION
+========================= */
+
+function disableHtmxNavigation() {
+  if (!document.body) return;
+
+  document.body.setAttribute("hx-boost", "false");
+  document.body.removeAttribute("hx-target");
+  document.body.removeAttribute("hx-select");
+  document.body.removeAttribute("hx-push-url");
+  document.body.removeAttribute("hx-swap");
+
+  document.querySelectorAll("[hx-boost]").forEach((element) => {
+    element.setAttribute("hx-boost", "false");
+  });
 }
 
 /* =========================
@@ -8,16 +26,6 @@ if ("scrollRestoration" in history) {
 
 function getMainContent() {
   return document.getElementById("main-content");
-}
-
-function scrollMainToTop() {
-  const mainContent = getMainContent();
-
-  if (mainContent) {
-    mainContent.scrollTop = 0;
-  }
-
-  window.scrollTo(0, 0);
 }
 
 function addPageLoading() {
@@ -87,20 +95,55 @@ function closeNavbarMenu() {
 ========================= */
 
 function initConfirmActions() {
-  document.querySelectorAll("[data-confirm]").forEach((element) => {
-    if (element.dataset.confirmBound === "true") return;
+  if (document.body.dataset.confirmGlobalBound === "true") return;
 
-    element.dataset.confirmBound = "true";
+  document.body.dataset.confirmGlobalBound = "true";
 
-    element.addEventListener("click", function (event) {
+  document.addEventListener(
+    "click",
+    function (event) {
+      const element = event.target.closest("[data-confirm]");
+
+      if (!element) return;
+
       const message = element.getAttribute("data-confirm");
 
-      if (message && !confirm(message)) {
+      if (!message) return;
+
+      const accepted = confirm(message);
+
+      if (!accepted) {
         event.preventDefault();
         event.stopPropagation();
+        event.stopImmediatePropagation();
+        return false;
       }
-    });
-  });
+    },
+    true,
+  );
+
+  document.addEventListener(
+    "submit",
+    function (event) {
+      const form = event.target;
+
+      if (!form || !form.matches("form[data-confirm]")) return;
+
+      const message = form.getAttribute("data-confirm");
+
+      if (!message) return;
+
+      const accepted = confirm(message);
+
+      if (!accepted) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        return false;
+      }
+    },
+    true,
+  );
 }
 
 /* =========================
@@ -400,6 +443,7 @@ function initDropdownInsideTable() {
 ========================= */
 
 function initAppUI() {
+  disableHtmxNavigation();
   setActiveNavbar();
   initConfirmActions();
   initSubmitLoading();
@@ -408,52 +452,12 @@ function initAppUI() {
   initDropdownInsideTable();
 }
 
+disableHtmxNavigation();
+
 document.addEventListener("DOMContentLoaded", function () {
   initAppUI();
 });
 
-/* =========================
-   HTMX EVENTS
-========================= */
-
-document.body.addEventListener("htmx:beforeRequest", function () {
-  closeNavbarMenu();
-  addPageLoading();
-});
-
-document.body.addEventListener("htmx:afterSwap", function (event) {
+window.addEventListener("pageshow", function () {
   initAppUI();
-
-  if (event.detail.target && event.detail.target.id === "main-content") {
-    scrollMainToTop();
-  }
-});
-
-document.body.addEventListener("htmx:afterSettle", function () {
-  removePageLoading();
-});
-
-document.body.addEventListener("htmx:responseError", function (event) {
-  removePageLoading();
-
-  const status = event.detail.xhr.status;
-  const url = event.detail.pathInfo
-    ? event.detail.pathInfo.requestPath
-    : window.location.href;
-
-  alert(
-    "Có lỗi khi tải trang.\n\n" +
-      "Mã lỗi: " +
-      status +
-      "\n" +
-      "Đường dẫn: " +
-      url +
-      "\n\n" +
-      "Bạn hãy xem log Spring Boot trong Terminal để biết lỗi chi tiết.",
-  );
-});
-
-document.body.addEventListener("htmx:sendError", function () {
-  removePageLoading();
-  alert("Không thể gửi yêu cầu đến máy chủ. Vui lòng kiểm tra lại kết nối.");
 });
