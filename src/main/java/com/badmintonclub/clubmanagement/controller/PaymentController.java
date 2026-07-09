@@ -98,7 +98,12 @@ public class PaymentController {
     public String createMonthlyPayment(
             @ModelAttribute PaymentBatch batch,
             @RequestParam String monthKey) {
+
         String month = convertMonthKeyToMonth(monthKey);
+
+        if (month == null || month.isBlank()) {
+            return "redirect:/payments/create-monthly?missingMonth";
+        }
 
         if (paymentBatchService.existsMonthlyBatchByMonth(month)) {
             return "redirect:/payments/create-monthly?duplicate";
@@ -369,17 +374,29 @@ public class PaymentController {
             return "";
         }
 
-        // input type="month" hoặc Flatpickr monthSelect trả về dạng yyyy-MM
-        // ví dụ: 2026-06
-        String[] parts = monthKey.split("-");
+        String value = monthKey.trim();
 
-        if (parts.length == 2) {
-            String year = parts[0];
-            String month = parts[1];
+        // Trường hợp month-picker gửi lên dạng yyyy-MM
+        // Ví dụ: 2026-07 -> 07/2026
+        if (value.matches("\\d{4}-\\d{2}")) {
+            String year = value.substring(0, 4);
+            String month = value.substring(5, 7);
 
             return month + "/" + year;
         }
 
-        return monthKey;
+        // Trường hợp dữ liệu đã là MM/yyyy
+        // Ví dụ: 07/2026
+        if (value.matches("\\d{2}/\\d{4}")) {
+            return value;
+        }
+
+        // Trường hợp người dùng hoặc trình duyệt gửi dạng M/yyyy
+        // Ví dụ: 7/2026 -> 07/2026
+        if (value.matches("\\d{1}/\\d{4}")) {
+            return "0" + value;
+        }
+
+        return value;
     }
 }

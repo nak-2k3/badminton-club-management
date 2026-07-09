@@ -43,7 +43,9 @@
         <div th:if="${param.duplicate}" class="alert alert-danger">
           Quỹ tháng này đã tồn tại. Vui lòng kiểm tra lại tháng thu.
         </div>
-
+        <div th:if="${param.missingMonth}" class="alert alert-danger">
+          Vui lòng chọn tháng thu trước khi tạo quỹ tháng.
+        </div>
         <div class="row g-3 mb-4">
           <div class="col-md-4">
             <div class="card stat-card border-primary">
@@ -132,11 +134,9 @@
                   </label>
 
                   <input
-                    type="text"
+                    type="month"
                     name="monthKey"
-                    class="form-control month-picker"
-                    placeholder="Chọn tháng thu"
-                    autocomplete="off"
+                    class="form-control"
                     required
                   />
 

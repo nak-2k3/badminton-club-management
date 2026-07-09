@@ -45,7 +45,13 @@ public class PaymentBatchService {
     }
 
     public boolean existsMonthlyBatchByMonth(String month) {
-        return paymentBatchRepository.existsByBatchTypeAndMonth("MONTHLY", month);
+        if (month == null || month.isBlank()) {
+            return false;
+        }
+
+        return paymentBatchRepository.existsByBatchTypeAndMonth(
+                "MONTHLY",
+                month.trim());
     }
 
     // Thu chi theo tháng
