@@ -1,6 +1,7 @@
 package com.badmintonclub.clubmanagement.repository;
 
 import com.badmintonclub.clubmanagement.entity.Schedule;
+import com.badmintonclub.clubmanagement.entity.enums.ScheduleStatus;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -23,4 +24,16 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
 
         // Tất cả lịch, sắp xếp lịch mới nhất lên trước
         List<Schedule> findAllByOrderByPlayTimeDesc();
+
+        // kiểm tra play time và tên sân
+        boolean existsByCourtNameIgnoreCaseAndPlayTimeAndStatusNot(
+                        String courtName,
+                        LocalDateTime playTime,
+                        ScheduleStatus status);
+
+        boolean existsByCourtNameIgnoreCaseAndPlayTimeAndStatusNotAndIdNot(
+                        String courtName,
+                        LocalDateTime playTime,
+                        ScheduleStatus status,
+                        Long id);
 }

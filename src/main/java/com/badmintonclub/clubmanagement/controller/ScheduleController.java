@@ -139,6 +139,15 @@ public class ScheduleController {
                         @Valid @ModelAttribute("schedule") Schedule schedule,
                         BindingResult result) {
 
+                if (!result.hasErrors()) {
+                        if (scheduleService.isDuplicateCourtAndPlayTime(schedule)) {
+                                result.rejectValue(
+                                                "playTime",
+                                                "schedule.duplicate",
+                                                "Sân này đã có lịch đánh vào thời gian đã chọn.");
+                        }
+                }
+
                 if (result.hasErrors()) {
                         if (schedule.getId() != null) {
                                 return "schedules/edit";

@@ -40,6 +40,10 @@ public class ScheduleService {
     }
 
     public Schedule saveSchedule(Schedule schedule) {
+        if (schedule.getCourtName() != null) {
+            schedule.setCourtName(schedule.getCourtName().trim());
+        }
+
         return scheduleRepository.save(schedule);
     }
 
@@ -85,5 +89,35 @@ public class ScheduleService {
     // Tìm 5 lịch đánh gần nhất
     public List<Schedule> getLatestSchedules() {
         return scheduleRepository.findTop5ByOrderByPlayTimeDesc();
+    }
+
+    // trùng lịch
+    public boolean isDuplicateCourtAndPlayTime(Schedule schedule) {
+        if (schedule == null) {
+            return false;
+        }
+
+        if (schedule.getCourtName() == null || schedule.getPlayTime() == null) {
+            return false;
+        }
+
+        String courtName = schedule.getCourtName().trim();
+
+        if (courtName.isEmpty()) {
+            return false;
+        }
+
+        if (schedule.getId() == null) {
+            return scheduleRepository.existsByCourtNameIgnoreCaseAndPlayTimeAndStatusNot(
+                    courtName,
+                    schedule.getPlayTime(),
+                    ScheduleStatus.CANCELLED);
+        }
+
+        return scheduleRepository.existsByCourtNameIgnoreCaseAndPlayTimeAndStatusNotAndIdNot(
+                courtName,
+                schedule.getPlayTime(),
+                ScheduleStatus.CANCELLED,
+                schedule.getId());
     }
 }
