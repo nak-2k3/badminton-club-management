@@ -27,7 +27,7 @@ public class Schedule {
     private String courtName;
 
     @NotNull(message = "Thời gian không được để trống")
-    @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
+    @DateTimeFormat(pattern = "dd/MM/yyyy HH:mm")
     private LocalDateTime playTime;
 
     @NotNull(message = "Giới hạn người không được để trống")

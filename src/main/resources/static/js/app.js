@@ -321,9 +321,7 @@ function initDatePickers() {
             enableTime: true,
             time_24hr: true,
             minuteIncrement: 15,
-            altInput: true,
-            altFormat: "d/m/Y H:i",
-            dateFormat: "Y-m-d\\TH:i",
+            dateFormat: "d/m/Y H:i",
             allowInput: false,
           });
         });
